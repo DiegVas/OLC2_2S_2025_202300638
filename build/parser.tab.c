@@ -67,7 +67,7 @@
 
 
 /* First part of user prologue.  */
-#line 1 "src/parser.y"
+#line 1 "src/parser/parser.y"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -1060,25 +1060,25 @@ yyreduce:
   switch (yyn)
     {
   case 4: /* line: expr '\n'  */
-#line 18 "src/parser.y"
+#line 18 "src/parser/parser.y"
                 { printf("Resultado: %d\n", yyvsp[-1]); }
 #line 1066 "build/parser.tab.c"
     break;
 
   case 5: /* expr: NUMBER  */
-#line 22 "src/parser.y"
+#line 22 "src/parser/parser.y"
                 { yyval = yylval; }
 #line 1072 "build/parser.tab.c"
     break;
 
   case 6: /* expr: expr '+' expr  */
-#line 23 "src/parser.y"
+#line 23 "src/parser/parser.y"
                     { yyval = yyvsp[-2] + yyvsp[0]; }
 #line 1078 "build/parser.tab.c"
     break;
 
   case 7: /* expr: expr '-' expr  */
-#line 24 "src/parser.y"
+#line 24 "src/parser/parser.y"
                     { yyval = yyvsp[-2] - yyvsp[0]; }
 #line 1084 "build/parser.tab.c"
     break;
@@ -1277,6 +1277,6 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 26 "src/parser.y"
+#line 26 "src/parser/parser.y"
 
 

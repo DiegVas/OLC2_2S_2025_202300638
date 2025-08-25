@@ -8,12 +8,25 @@ BUILD = build
 LEXER = $(SRC)/parser/lexer.l
 PARSER = $(SRC)/parser/parser.y
 MAIN = $(SRC)/main.c
-UI = $(SRC)/UI/ui.c
+
+# Archivos modulares de la UI
+UI_DIR = $(SRC)/UI
+UI_FILES = $(UI_DIR)/UI.c \
+           $(UI_DIR)/menu.c \
+           $(UI_DIR)/toolbar.c \
+           $(UI_DIR)/editor.c \
+           $(UI_DIR)/console.c \
+           $(UI_DIR)/reports.c \
+           $(UI_DIR)/styles.c \
+           $(UI_DIR)/main_window.c
 
 GTK_FLAGS = `pkg-config --cflags --libs gtk+-3.0`
 
-all: $(BUILD)/parser.tab.c $(BUILD)/lexer.yy.c $(MAIN) $(UI)
-	$(CC) -I$(INC) $(BUILD)/parser.tab.c $(BUILD)/lexer.yy.c $(MAIN) $(UI) -o $(BUILD)/main $(GTK_FLAGS)
+# Flags para silenciar advertencias de GTK
+WARNINGS = -Wno-deprecated-declarations
+
+all: $(BUILD)/parser.tab.c $(BUILD)/lexer.yy.c $(MAIN) $(UI_FILES)
+	$(CC) -I$(INC) -I$(UI_DIR) $(WARNINGS) $(BUILD)/parser.tab.c $(BUILD)/lexer.yy.c $(MAIN) $(UI_FILES) -o $(BUILD)/main $(GTK_FLAGS)
 
 $(BUILD)/parser.tab.c $(BUILD)/parser.tab.h: $(PARSER)
 	$(BISON) -d -o $(BUILD)/parser.tab.c $(PARSER)
