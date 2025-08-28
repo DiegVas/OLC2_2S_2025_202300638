@@ -1,27 +1,61 @@
+
 %{
 #include <stdio.h>
-#include <stdlib.h>
-extern int yylex();
-int yylval;
-int yyerror(const char *s);
+#include "../structures/token_list.h"
+
+int yylex();
+int yyerror(char *s);
+
+	extern InstruccionList *list_tokens;
+
+
 %}
 
-%token NUMBER IDENTIFIER
+%locations
+
+%union {
+    int ival;
+    float fval;
+    char* sval;
+}
+
+/* Tokens */
+
+/* Valores */
+
+%token <sval> STR CHR BOOLEAN ID OTHER
+%token <ival> NUM
+%token <fval> DEC
+
+/* Palabras reservadas */
+
+%token <sval> INT STRING CHAR FLOAT BOOL
+
+
+/* SIMBOLOS */
+%token <sval> EQUAL
 
 %%
-input:
-    /* vacío */
-    | input line
-    ;
+
+prog:
+	lines
+;
+
+lines:
+	  /* vacío */
+	| line lines
+;
 
 line:
-    expr '\n'   { printf("Resultado: %d\n", $1); }
-    ;
+    BOOL { printf("Linea válida: %s\n", $1);}
+;
 
-expr:
-    NUMBER      { $$ = yylval; }
-    | expr '+' expr { $$ = $1 + $3; }
-    | expr '-' expr { $$ = $1 - $3; }
-    ;
+
+
 %%
 
+int yyerror(char *s)
+{
+	printf("Syntax Error on line %s\n", s);
+	return 0;
+}

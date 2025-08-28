@@ -22,23 +22,6 @@ GtkWidget* create_console(GtkWidget **out_text_view) {
     gtk_text_view_set_bottom_margin(GTK_TEXT_VIEW(text_view), 15);
     
     GtkTextBuffer *buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
-    gtk_text_buffer_set_text(buffer, 
-        "JavaLang Interpreter Console\n"
-        "Ready to execute .usl files...\n"
-        ">>> Compilation started\n"
-        ">>> Lexical analysis: OK\n"
-        ">>> Syntax analysis: OK\n"
-        ">>> Semantic analysis: OK\n"
-        ">>> Execution started\n"
-        "Hello, JavaLang!\n"
-        "x = 10\n"
-        "x is greater than 5\n"
-        "Number: 1\n"
-        "Number: 2\n"
-        "Number: 3\n"
-        "Number: 4\n"
-        "Number: 5\n"
-        ">>> Execution completed successfully\n", -1);
     
     // Aplicar tema oscuro consistente
     GdkRGBA bg_color, fg_color;

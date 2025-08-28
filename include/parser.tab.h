@@ -54,22 +54,58 @@ extern int yydebug;
     YYEOF = 0,                     /* "end of file"  */
     YYerror = 256,                 /* error  */
     YYUNDEF = 257,                 /* "invalid token"  */
-    NUMBER = 258,                  /* NUMBER  */
-    IDENTIFIER = 259               /* IDENTIFIER  */
+    STR = 258,                     /* STR  */
+    CHR = 259,                     /* CHR  */
+    BOOLEAN = 260,                 /* BOOLEAN  */
+    ID = 261,                      /* ID  */
+    OTHER = 262,                   /* OTHER  */
+    NUM = 263,                     /* NUM  */
+    DEC = 264,                     /* DEC  */
+    INT = 265,                     /* INT  */
+    STRING = 266,                  /* STRING  */
+    CHAR = 267,                    /* CHAR  */
+    FLOAT = 268,                   /* FLOAT  */
+    BOOL = 269,                    /* BOOL  */
+    EQUAL = 270                    /* EQUAL  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
-typedef int YYSTYPE;
+union YYSTYPE
+{
+#line 16 "src/parser/parser.y"
+
+    int ival;
+    float fval;
+    char* sval;
+
+#line 85 "build/parser.tab.h"
+
+};
+typedef union YYSTYPE YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define YYSTYPE_IS_DECLARED 1
 #endif
 
+/* Location type.  */
+#if ! defined YYLTYPE && ! defined YYLTYPE_IS_DECLARED
+typedef struct YYLTYPE YYLTYPE;
+struct YYLTYPE
+{
+  int first_line;
+  int first_column;
+  int last_line;
+  int last_column;
+};
+# define YYLTYPE_IS_DECLARED 1
+# define YYLTYPE_IS_TRIVIAL 1
+#endif
+
 
 extern YYSTYPE yylval;
-
+extern YYLTYPE yylloc;
 
 int yyparse (void);
 
