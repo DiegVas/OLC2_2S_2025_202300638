@@ -5,8 +5,11 @@
 #include <string.h>
 #include "parser.tab.h"
 #include <stdbool.h>
+#include "../structures/parser.h"
 
 void showError();
+
+extern ErrorList *list_errors;
 
 int yycolumn = 1;
 
@@ -32,87 +35,66 @@ DEC [0-9]+"."[0-9]+
 ID [A-Za-z][A-Za-z0-9_]*
 STR \"([^\\"]|\\.)*\"
 CHR \'([^\\']|\\.)*\'
-BLANK [ \r\t\n]+
+BLANK [ \r\t]+
+BREAK_LINE \n
 
 %%
 
-= {
-    printf("Token: %s, Tipo: EQUAL, Línea: %d, Columna: %d\n", yytext, yylineno, yycolumn);
-    return EQUAL;
-}
+";" return ';';
 
-int {
-    printf("Token: %s, Tipo: INT, Línea: %d, Columna: %d\n", yytext, yylineno, yycolumn);
-    return INT;
-}
+"=" return '=';
 
-float {
-    printf("Token: %s, Tipo: FLOAT, Línea: %d, Columna: %d\n", yytext, yylineno, yycolumn);
-    return FLOAT;
-}
+"int" return INT;
 
-String {
-    printf("Token: %s, Tipo: STRING, Línea: %d, Columna: %d\n", yytext, yylineno, yycolumn);
-    return STRING;
-}
+"float" return FLOAT;
 
-bool {
-    printf("Token: %s, Tipo: BOOL, Línea: %d, Columna: %d\n", yytext, yylineno, yycolumn);
-    return BOOL;
-}
+"String" return STRING;
 
-char {
-    printf("Token: %s, Tipo: CHAR, Línea: %d, Columna: %d\n", yytext, yylineno, yycolumn);
-    return CHAR;
-}
+"boolean" return BOOL;
 
-true     {  
-    printf("Token: %s, Tipo: BOOL, Línea: %d, Columna: %d\n", yytext, yylineno, yycolumn);
+"char" return CHAR;
+
+"final" return FINAL;
+
+"true" {
+    yylval.sval = strdup(yytext);
     return BOOLEAN;
-        }
+}
 
-false    {
-       
-    printf("Token: %s, Tipo: BOOLEAN, Línea: %d, Columna: %d\n", yytext, yylineno, yycolumn);
+"false" {
+    yylval.sval = strdup(yytext);
     return BOOLEAN;
-        }
-
-int {
-    printf("Token: %s, Tipo: INT, Línea: %d, Columna: %d\n", yytext, yylineno, yycolumn);
-    return INT;
 }
 
 {NUM}      {
-    printf("Token: %s, Tipo: NUM, Línea: %d, Columna: %d\n", yytext, yylineno, yycolumn);
-    yylval.ival = atoi(yytext);
+    yylval.sval = strdup(yytext);
     return NUM;
-        }
+}
 
 {DEC}      {
-    printf("Token: %s, Tipo: DEC, Línea: %d, Columna: %d\n", yytext, yylineno, yycolumn);
-    yylval.fval = atof(yytext);
+    yylval.sval = strdup(yytext);
     return DEC;
 }
 
 {ID}       {
-    printf("Token: %s, Tipo: ID, Línea: %d, Columna: %d\n", yytext, yylineno, yycolumn);
     yylval.sval = strdup(yytext);
     return ID;
 }
 
 {STR} {
-    printf("Token: %s, Tipo: STR, Línea: %d, Columna: %d\n", yytext, yylineno, yycolumn);
     yylval.sval = strdup(yytext);
     return STR;
 }
 
 {CHR} {
-    printf("Token: %s, Tipo: CHR, Línea: %d, Columna: %d\n", yytext, yylineno, yycolumn);
     yylval.sval = strdup(yytext);
     return CHR;
 }
 
-";"      		   {}
+{BREAK_LINE}    {
+    yycolumn = 1; // Reinicia la columna al inicio de cada línea
+    return BREAK_LINE;
+}
 
 {BLANK}    { /* Ignorar espacios en blanco */ }
 
@@ -124,4 +106,10 @@ int {
 
 void showError(){
     printf("Other input");
+    Error *error = malloc(sizeof(Error));
+    error->type = strdup("Léxico");
+    error->message = strdup("Error léxico: carácter inesperado");
+    error->line = yylloc.first_line;
+    error->column = yylloc.first_column;
+    insertError(list_errors, error);
 }

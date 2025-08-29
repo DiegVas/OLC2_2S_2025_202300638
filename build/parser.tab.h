@@ -44,6 +44,12 @@
 #if YYDEBUG
 extern int yydebug;
 #endif
+/* "%code requires" blocks.  */
+#line 17 "src/parser/parser.y"
+
+    typedef struct Instruccion Instruccion;
+
+#line 53 "build/parser.tab.h"
 
 /* Token kinds.  */
 #ifndef YYTOKENTYPE
@@ -61,12 +67,13 @@ extern int yydebug;
     OTHER = 262,                   /* OTHER  */
     NUM = 263,                     /* NUM  */
     DEC = 264,                     /* DEC  */
-    INT = 265,                     /* INT  */
-    STRING = 266,                  /* STRING  */
-    CHAR = 267,                    /* CHAR  */
-    FLOAT = 268,                   /* FLOAT  */
-    BOOL = 269,                    /* BOOL  */
-    EQUAL = 270                    /* EQUAL  */
+    BREAK_LINE = 265,              /* BREAK_LINE  */
+    INT = 266,                     /* INT  */
+    STRING = 267,                  /* STRING  */
+    CHAR = 268,                    /* CHAR  */
+    FLOAT = 269,                   /* FLOAT  */
+    BOOL = 270,                    /* BOOL  */
+    FINAL = 271                    /* FINAL  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -75,13 +82,12 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 16 "src/parser/parser.y"
+#line 23 "src/parser/parser.y"
 
-    int ival;
-    float fval;
     char* sval;
+    Instruccion* instr;
 
-#line 85 "build/parser.tab.h"
+#line 91 "build/parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

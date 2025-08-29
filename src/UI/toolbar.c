@@ -3,8 +3,9 @@
 #include <string.h>
 #include <fcntl.h>
 #include <sys/stat.h>
-#include "../structures/token_list.h"
+#include "../structures/parser.h"
 #include "parser.tab.h"
+#include "../parser/semantic/semantic.h"
 // Callback para el botón "Nuevo"
 void on_new_clicked(GtkToolButton *button, gpointer user_data)
 {
@@ -238,9 +239,21 @@ void on_run_clicked(GtkToolButton *button, gpointer user_data)
                 yylineno = 1;
                 extern int yycolumn;
                 yycolumn = 1;
+
                 // ! Inicializar variables
-                // Ejecutar el parser
+                // ! Ejecutar el parser
+
+                extern InstruccionList *list_tokens;
+                InstruccionList_destroy(list_tokens);
+                list_tokens = InstruccionList_create();
+
+                extern ErrorList *list_errors;
+                ErrorList_destroy(list_errors);
+                list_errors = createErrorList();
+
                 int parse_result = yyparse();
+
+                semantic_analysis();
 
                 fclose(temp_file);
 

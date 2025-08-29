@@ -1,6 +1,6 @@
 {
   "C_Cpp.errorSquiggles": "enabled",
   "files.associations": {
-    "token_list.h": "c"
+    "parser.h": "c"
   }
 }

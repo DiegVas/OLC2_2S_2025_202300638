@@ -20,19 +20,26 @@ UI_FILES = $(UI_DIR)/UI.c \
            $(UI_DIR)/styles.c \
            $(UI_DIR)/main_window.c
 
+# Directorio de análisis semantico
+PARSER_DIR = $(SRC)/parser/semantic
+PARSER_FILES = $(PARSER_DIR)/semantic.c \
+               $(PARSER_DIR)/execute.c
+
 # Archivos modulares de estructuras
 
 STRUCTURES_DIR = $(SRC)/structures
 STRUCTURES_FILES = $(STRUCTURES_DIR)/Instruction.c \
-                  $(STRUCTURES_DIR)/ASTNode.c
+                  $(STRUCTURES_DIR)/ASTNode.c \
+                  $(STRUCTURES_DIR)/Errors.c \
+                  $(STRUCTURES_DIR)/SymbolTable.c
 
 GTK_FLAGS = `pkg-config --cflags --libs gtk+-3.0`
 
 # Flags para silenciar advertencias de GTK
 WARNINGS = -Wno-deprecated-declarations
 
-all: $(BUILD)/parser.tab.c $(BUILD)/lexer.yy.c $(MAIN) $(UI_FILES) $(STRUCTURES_FILES)
-	$(CC) -I$(INC) -I$(UI_DIR) $(WARNINGS) $(BUILD)/parser.tab.c $(BUILD)/lexer.yy.c $(MAIN) $(UI_FILES) $(STRUCTURES_FILES) -o $(BUILD)/main $(GTK_FLAGS)
+all: $(BUILD)/parser.tab.c $(BUILD)/lexer.yy.c $(MAIN) $(UI_FILES) $(STRUCTURES_FILES) $(PARSER_FILES)
+	$(CC) -I$(INC) -I$(UI_DIR) $(WARNINGS) $(BUILD)/parser.tab.c $(BUILD)/lexer.yy.c $(MAIN) $(UI_FILES) $(STRUCTURES_FILES) $(PARSER_FILES) -o $(BUILD)/main $(GTK_FLAGS)
 
 $(BUILD)/parser.tab.c $(BUILD)/parser.tab.h: $(PARSER)
 	$(BISON) -d -o $(BUILD)/parser.tab.c $(PARSER)
