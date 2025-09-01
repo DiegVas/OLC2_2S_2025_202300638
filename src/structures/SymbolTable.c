@@ -11,10 +11,11 @@ symbol_table *Symbol_table_create()
 
 bool SearchID(symbol_table *table, char *id)
 {
+
     symbol_node *current = table->head;
     while (current != NULL)
     {
-        if (strcmp(current->data->value, id) == 0)
+        if (strcmp(current->data->id, id) == 0)
         {
             return true; // ID encontrado
         }

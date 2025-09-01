@@ -8,14 +8,16 @@ void semantic_analysis()
 
     extern InstruccionList *list_tokens;
     extern ErrorList *list_errors;
+    extern symbol_table *SymbolTable_General;
+
+    Symbol_table_destroy(SymbolTable_General);
+    SymbolTable_General = Symbol_table_create();
 
     contextGlobal = malloc(sizeof(Context));
     contextGlobal->nombre = "Global";
 
-    symbol_table *global_symbol_table = Symbol_table_create();
-    contextGlobal->symbols_context = global_symbol_table;
-
-    // Implementación del análisis semántico
+    contextGlobal->errors = list_errors;
+    contextGlobal->symbols_context = SymbolTable_General;
 
     InstruccionNode *curr = list_tokens->head;
 

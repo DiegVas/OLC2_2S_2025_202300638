@@ -13,6 +13,7 @@ typedef struct symbol
     char *subType;
     char *environment;
     char *value;
+    char *id;
 
     int *line;
     int *column;
@@ -36,6 +37,7 @@ typedef struct Context
     char *nombre;
     struct Context *after;
     struct symbol_table *symbols_context;
+    struct ErrorList *errors;
     bool *continue_instruction;
     bool *break_instruction;
     char *return_type;
@@ -128,5 +130,6 @@ void insertError(ErrorList *list, Error *error);
 symbol_table *Symbol_table_create();
 void Symbol_table_destroy(symbol_table *table);
 void Symbol_table_insert(symbol_table *table, symbol *sym);
+bool SearchID(symbol_table *table, char *id);
 
 #endif // PARSER_H
