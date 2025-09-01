@@ -4,7 +4,7 @@
     {
       "label": "Compilar y Ejecutar Analizador",
       "type": "shell",
-      "command": "make && ./build/main",
+      "command": "make && ./build/main ",
       "group": {
         "kind": "build",
         "isDefault": true

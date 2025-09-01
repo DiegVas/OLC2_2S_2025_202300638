@@ -28,11 +28,14 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
         }
 
         // Insertar el nuevo símbolo en la tabla de símbolos del contexto actual
-        symbol *new_symbol = (symbol *)malloc(sizeof(symbol));
+        symbol *new_symbol = (symbol *)calloc(1, sizeof(symbol));
         new_symbol->value = instruction->value->value;
         new_symbol->type = instruction->dataType;
         new_symbol->id = instruction->id;
         new_symbol->environment = context->nombre;
+        new_symbol->line = &(instruction->line);
+        new_symbol->column = &(instruction->column);
+
         Symbol_table_insert(symbolTable_C, new_symbol);
     }
     else if (strcmp(instruction->type, "ASSIGNMENT") == 0)

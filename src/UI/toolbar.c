@@ -255,6 +255,10 @@ void on_run_clicked(GtkToolButton *button, gpointer user_data)
 
                 semantic_analysis();
 
+                extern symbol_table *SymbolTable_General;
+                update_symbols_table_safe(global_widgets->symbols_store, SymbolTable_General);
+                update_errors_table_safe(global_widgets->errors_store, list_errors);
+
                 fclose(temp_file);
 
                 // Restaurar stdout
