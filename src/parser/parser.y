@@ -160,6 +160,27 @@ instruction:
         $$ = instP;
     }
 
+    //* Char ID = 'c'
+    | CHAR ID '=' CHR {
+        // ? Crear instrucción
+        Instruccion* instP = (Instruccion*)malloc(sizeof(Instruccion));
+        instP->type = "DECLARATION";
+        instP->id = $2;
+        instP->dataType = strdup("char");
+        instP->line = @2.first_line;
+        instP->column = @2.first_column;
+
+        // ? Crear expresión
+        Expression* exp = (Expression*)malloc(sizeof(Expression));
+        exp->type = strdup("char");
+        exp->value = strdup($4);
+        exp->line = @4.first_line;
+        exp->column = @4.first_column;
+
+        instP->value = exp;
+        $$ = instP;
+    }
+
 %%
 
 int yyerror(const char *s)
