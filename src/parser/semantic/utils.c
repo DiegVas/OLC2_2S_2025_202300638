@@ -5,12 +5,11 @@ ExecuteType get_instruction_type(const char *type_str)
 {
 
     if (strcmp(type_str, "DECLARATION") == 0)
-    {
-
         return DECLARATION;
-    }
     if (strcmp(type_str, "ASSIGNMENT") == 0)
         return ASSIGNMENT;
+    if (strcmp(type_str, "PRINTLN") == 0)
+        return EXP_PRINTLN;
     return UNKNOWN;
 }
 

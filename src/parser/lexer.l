@@ -93,6 +93,8 @@ BREAK_LINE \n
 
 "final" return FINAL;
 
+"System.out.println" return PRINTLN;
+
 "true" {
     yylval.sval = strdup(yytext);
     return BOOLEAN;

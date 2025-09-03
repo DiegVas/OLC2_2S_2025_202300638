@@ -83,6 +83,26 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
     case ASSIGNMENT:
         /* code */
         break;
+    case EXP_PRINTLN:
+    {
+        symbol *print_value = evaluate_expression(instruction->value, context);
+
+        if (strcmp(print_value->type, "UNDEFINED") == 0)
+        {
+            // Error: Evaluación de expresión fallida
+            Error *new_error = (Error *)malloc(sizeof(Error));
+            new_error->type = "Semantic";
+            new_error->environment = context->nombre;
+            new_error->message = print_value->value;
+            new_error->line = instruction->line;
+            new_error->column = instruction->column;
+            insertError(errorList_C, new_error);
+            return;
+        }
+
+        printf("%s\n", print_value->value);
+        break;
+    }
     default:
         break;
     }

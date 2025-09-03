@@ -36,7 +36,7 @@ int yyerror(const char *s);
 
 /* Palabras reservadas */
 
-%token <sval> INT STRING CHAR FLOAT DOUBLE BOOL FINAL
+%token <sval> INT STRING CHAR FLOAT DOUBLE BOOL FINAL PRINTLN
 
 /* Tipo de los no-terminales que llevan valor */
 %type program sentence
@@ -84,7 +84,15 @@ instruction:
         $1->InstType = "DECLARATION";
         $1->line = @1.first_line;
         $$ = $1;
-    };
+    }
+    | PRINTLN '(' expression ')' {
+        Instruccion* instP = (Instruccion*)malloc(sizeof(Instruccion));
+        instP->InstType = "PRINTLN";
+        instP->value = $3;
+        instP->line = @1.first_line;
+        $$ = instP;
+    }
+    ;
 
 declaration: //* int ID = 15
     primitive_types ID '=' expression {

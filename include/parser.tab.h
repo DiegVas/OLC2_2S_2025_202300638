@@ -76,7 +76,8 @@ extern int yydebug;
     FLOAT = 270,                   /* FLOAT  */
     DOUBLE = 271,                  /* DOUBLE  */
     BOOL = 272,                    /* BOOL  */
-    FINAL = 273                    /* FINAL  */
+    FINAL = 273,                   /* FINAL  */
+    PRINTLN = 274                  /* PRINTLN  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -91,7 +92,7 @@ union YYSTYPE
     Instruccion* instr;
     Expression* expr;
 
-#line 95 "build/parser.tab.h"
+#line 96 "build/parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;
