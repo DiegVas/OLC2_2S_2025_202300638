@@ -11,14 +11,18 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
     // ! Tabla de errores del contexto
     ErrorList *errorList_C = context->errors;
 
-    if (strcmp(instruction->type, "DECLARATION") == 0)
+    ExecuteType instruction_type = get_instruction_type(instruction->InstType);
+
+    switch (instruction_type)
     {
+    case DECLARATION:
 
         // ! Ya existe el mismo id en el conxteo
         if (SearchID(symbolTable_C, instruction->id))
         {
             // Error: ID ya declarado en este contexto
             Error *new_error = (Error *)malloc(sizeof(Error));
+            new_error->environment = strdup(context->nombre);
             new_error->type = "Semantic";
             new_error->message = "ID ya declarado en este contexto";
             new_error->line = instruction->line;
@@ -27,23 +31,59 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
             return;
         }
 
+        symbol *evaluated_value = evaluate_expression(instruction->value, context);
+
+        evaluated_value = apply_casting_auto(evaluated_value, instruction->type);
+
+        if (strcmp(evaluated_value->type, instruction->type) != 0)
+        {
+
+            // Error: Tipo de dato no coincide
+            Error *new_error = (Error *)malloc(sizeof(Error));
+            new_error->type = "Semantic";
+            char buffer[256];
+            snprintf(buffer, sizeof(buffer), "Tipo de dato no coincide: %s vs %s", evaluated_value->type, instruction->type);
+            new_error->message = strdup(buffer);
+            new_error->environment = strdup(context->nombre);
+            new_error->line = instruction->line;
+            new_error->column = instruction->column;
+            insertError(errorList_C, new_error);
+            return;
+        }
+
+        if (strcmp(evaluated_value->value, "UNDEFINED") == 0)
+        {
+            // Error: Evaluación de expresión fallida
+            Error *new_error = (Error *)malloc(sizeof(Error));
+            new_error->type = "Semantic";
+            new_error->environment = context->nombre;
+            new_error->message = evaluated_value->value;
+            new_error->line = instruction->line;
+            new_error->column = instruction->column;
+            insertError(errorList_C, new_error);
+            return;
+        }
+
         // Insertar el nuevo símbolo en la tabla de símbolos del contexto actual
         symbol *new_symbol = (symbol *)calloc(1, sizeof(symbol));
-        new_symbol->value = instruction->value->value;
-        new_symbol->type = instruction->dataType;
+        new_symbol->value = evaluated_value->value;
+        new_symbol->dataType = instruction->type;
+        new_symbol->type = instruction->symbolType;
         new_symbol->id = instruction->id;
         new_symbol->environment = context->nombre;
         new_symbol->line = &(instruction->line);
         new_symbol->column = &(instruction->column);
 
+        fprintf(stderr, "Nuevo símbolo: %s, Tipo: %s, Valor: %s\n",
+                new_symbol->id, new_symbol->dataType, new_symbol->value);
+
         Symbol_table_insert(symbolTable_C, new_symbol);
-    }
-    else if (strcmp(instruction->type, "ASSIGNMENT") == 0)
-    {
-        // código para asignación
-    }
-    else
-    {
-        // otro caso
+        /* code */
+        break;
+    case ASSIGNMENT:
+        /* code */
+        break;
+    default:
+        break;
     }
 }

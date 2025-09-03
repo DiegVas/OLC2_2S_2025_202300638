@@ -2,6 +2,8 @@
   "C_Cpp.errorSquiggles": "enabled",
   "files.associations": {
     "parser.h": "c",
-    "stdio.h": "c"
+    "stdio.h": "c",
+    "semantic.h": "c",
+    "string.h": "c"
   }
 }

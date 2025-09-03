@@ -9,6 +9,7 @@
 
 typedef struct symbol
 {
+    char *dataType;
     char *type;
     char *subType;
     char *environment;
@@ -50,6 +51,7 @@ typedef struct Context
 typedef struct Error
 {
     char *type;
+    char *environment;
     char *message;
     int line;
     int column;
@@ -74,13 +76,16 @@ typedef struct Expression
     char *value;
     int line;
     int column;
+    struct Expression *left;
+    struct Expression *right;
 } Expression;
 
 typedef struct Instruccion
 {
+    char *InstType;
+    char *symbolType;
     char *type;
     char *id;
-    char *dataType;
     int line;
     int column;
     Expression *value;
@@ -131,5 +136,6 @@ symbol_table *Symbol_table_create();
 void Symbol_table_destroy(symbol_table *table);
 void Symbol_table_insert(symbol_table *table, symbol *sym);
 bool SearchID(symbol_table *table, char *id);
+symbol *SearchSymbol(symbol_table *table, char *id);
 
 #endif // PARSER_H

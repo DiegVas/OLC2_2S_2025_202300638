@@ -40,7 +40,7 @@ void InstruccionList_print(InstruccionList *list)
             fprintf(stderr, "Tipo: %s, ID: %s, DataType: %s, Línea: %d, Columna: %d\n",
                     inst->type ? inst->type : "NULL",
                     inst->id ? inst->id : "NULL",
-                    inst->dataType ? inst->dataType : "NULL",
+                    inst->InstType ? inst->InstType : "NULL",
                     inst->line,
                     inst->column);
 

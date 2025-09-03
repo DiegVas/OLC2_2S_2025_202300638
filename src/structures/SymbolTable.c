@@ -24,6 +24,20 @@ bool SearchID(symbol_table *table, char *id)
     return false;
 }
 
+symbol *SearchSymbol(symbol_table *table, char *id)
+{
+    symbol_node *current = table->head;
+    while (current != NULL)
+    {
+        if (strcmp(current->data->id, id) == 0)
+        {
+            return current->data; // ID encontrado
+        }
+        current = current->next;
+    }
+    return NULL; // No encontrado
+}
+
 void Symbol_table_insert(symbol_table *table, symbol *sym)
 {
     symbol_node *new_node = (symbol_node *)malloc(sizeof(symbol_node));

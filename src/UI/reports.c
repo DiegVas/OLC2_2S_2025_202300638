@@ -138,14 +138,14 @@ GtkWidget *create_reports_panel()
     gdk_rgba_parse(&errors_container_bg, "#0A0A0A");
     gtk_widget_override_background_color(errors_container, GTK_STATE_FLAG_NORMAL, &errors_container_bg);
 
-    GtkListStore *errors_store = gtk_list_store_new(5, G_TYPE_INT, G_TYPE_STRING,
+    GtkListStore *errors_store = gtk_list_store_new(6, G_TYPE_INT, G_TYPE_STRING, G_TYPE_STRING,
                                                     G_TYPE_STRING, G_TYPE_INT, G_TYPE_INT);
     global_widgets->errors_store = errors_store;
     GtkWidget *errors_tree = gtk_tree_view_new_with_model(GTK_TREE_MODEL(global_widgets->errors_store));
 
     // Columns for errors
-    const char *error_columns[] = {"No.", "Descripción", "Ámbito", "Línea", "Columna"};
-    for (int i = 0; i < 5; i++)
+    const char *error_columns[] = {"No.", "Tipo", "Descripción", "Ámbito", "Línea", "Columna"};
+    for (int i = 0; i < 6; i++)
     {
         GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
         GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes(
@@ -210,8 +210,8 @@ void update_symbols_table_safe(GtkListStore *store, symbol_table *table)
 
         // Create safe copies of data with validation
         const char *safe_id = get_safe_string(sym->id, "N/A");
-        const char *safe_type = get_safe_string(sym->type, "N/A");
-        const char *safe_subtype = get_safe_string(sym->subType, "N/A");
+        const char *safe_type = get_safe_string(sym->dataType, "N/A");
+        const char *safe_subtype = get_safe_string(sym->type, "N/A");
         const char *safe_environment = get_safe_string(sym->environment, "global");
 
         // Safe line and column access
@@ -305,16 +305,18 @@ void update_errors_table_safe(GtkListStore *store, ErrorList *list)
         // Safe string access for error data
         const char *safe_message = get_safe_string(err->message, "Unknown error");
         const char *safe_type = get_safe_string(err->type, "General");
+        const char *safe_environment = get_safe_string(err->environment, "Global");
 
         GtkTreeIter iter;
         gtk_list_store_append(store, &iter);
 
         gtk_list_store_set(store, &iter,
                            0, error_num,
-                           1, safe_message,
-                           2, safe_type,
-                           3, err->line,
-                           4, err->column,
+                           1, safe_type,
+                           2, safe_message,
+                           3, safe_environment,
+                           4, err->line,
+                           5, err->column,
                            -1);
 
         error_num++;

@@ -16,6 +16,7 @@ int yyerror(const char *s);
 
 %code requires {
     typedef struct Instruccion Instruccion;
+    typedef struct Expression Expression;
 }
 
 %locations
@@ -23,27 +24,33 @@ int yyerror(const char *s);
 %union {
     char* sval;
     Instruccion* instr;
+    Expression* expr;
 }
 
 /* Tokens */
 
 /* Valores */
 
-%token <sval> STR CHR BOOLEAN ID OTHER NUM DEC
+%token <sval> STR CHR BOOLEAN ID OTHER NUM DEC DECF
 %token BREAK_LINE
 
 /* Palabras reservadas */
 
-%token <sval> INT STRING CHAR FLOAT BOOL FINAL
+%token <sval> INT STRING CHAR FLOAT DOUBLE BOOL FINAL
 
 /* Tipo de los no-terminales que llevan valor */
 %type program sentence
 %type <instr> instruction
+%type <instr> declaration
+%type <sval> primitive_types
+%type <expr> primitive_values
+%type <expr> expression;
 
 
 // precedencia menor a mayor
 %left '+' '-' 
 %left '*' '/' 
+%left '(' ')'
 
 %%
 
@@ -73,113 +80,144 @@ separator
 
 instruction:
 
-    //* int ID = 15
-    INT ID '=' NUM {
+    declaration {
+        $1->InstType = "DECLARATION";
+        $1->line = @1.first_line;
+        $$ = $1;
+    };
+
+declaration: //* int ID = 15
+    primitive_types ID '=' expression {
 
         // ? Crear instrucción
 
         Instruccion* instP = (Instruccion*)malloc(sizeof(Instruccion));
-        instP->type = "DECLARATION";
         instP->id = $2;
-        instP->dataType = strdup("int");
-        instP->line = @2.first_line;
+        instP->type = $1;
         instP->column = @2.first_column;
-
-        // ? Crear expresión
-
-        Expression* exp = (Expression*)malloc(sizeof(Expression));
-        exp->type = strdup("int");
-        exp->value = strdup($4);
-        exp->line = @4.first_line;
-        exp->column = @4.first_column;
-
-        instP->value = exp;
+        instP->symbolType = "VARIABLE";
+        instP->value = $4;
         $$ = instP;
-    }
-
-    //* String ID = "hola"
-    | STRING ID '=' STR {
-        // ? Crear instrucción
+    }  // * int x;
+    | primitive_types ID {
         Instruccion* instP = (Instruccion*)malloc(sizeof(Instruccion));
-        instP->type = "DECLARATION";
         instP->id = $2;
-        instP->dataType = strdup("string");
-        instP->line = @2.first_line;
+        instP->type = $1;
         instP->column = @2.first_column;
+        instP->symbolType = "VARIABLE";
 
-        // ? Crear expresión
-        Expression* exp = (Expression*)malloc(sizeof(Expression));
-        exp->type = strdup("string");
-        exp->value = strdup($4);
-        exp->line = @4.first_line;
-        exp->column = @4.first_column;
+        Expression* exp = (Expression*)calloc(1, sizeof(Expression));
+        exp->type = $1;
+        exp->value = strdup("UNDEFINED");
 
         instP->value = exp;
         $$ = instP;
-    }
 
-    //* float ID = 3.14
-    | FLOAT ID '=' DEC {
-        // ? Crear instrucción
+    } // * final int ID = 15 
+    | FINAL primitive_types ID '=' expression {
         Instruccion* instP = (Instruccion*)malloc(sizeof(Instruccion));
-        instP->type = "DECLARATION";
-        instP->id = $2;
-        instP->dataType = strdup("float");
-        instP->line = @2.first_line;
-        instP->column = @2.first_column;
-
-        // ? Crear expresión
-        Expression* exp = (Expression*)malloc(sizeof(Expression));
-        exp->type = strdup("float");
-        exp->value = strdup($4);
-        exp->line = @4.first_line;
-        exp->column = @4.first_column;
-
-        instP->value = exp;
+        instP->id = $3;
+        instP->type = $2;
+        instP->column = @3.first_column;
+        instP->symbolType = "CONSTANT";
+        instP->value = $5;
         $$ = instP;
+    };
+
+primitive_types:
+    INT { $$ = strdup("INTEGER"); }
+    | STRING { $$ = strdup("STRING"); }
+    | DOUBLE { $$ = strdup("DOUBLE"); }
+    | FLOAT { $$ = strdup("FLOAT"); }
+    | BOOL { $$ = strdup("BOOLEAN"); }
+    | CHAR { $$ = strdup("CHARACTER"); };
+
+primitive_values:
+    NUM { 
+        Expression* exp = (Expression*)calloc(1, sizeof(Expression));
+        exp->type = strdup("INTEGER");
+        exp->value = strdup($1);
+
+        $$ = exp; }
+    | STR { 
+        Expression* exp = (Expression*)calloc(1, sizeof(Expression));
+        exp->type = strdup("STRING");
+        exp->value = strdup($1);
+
+        $$ = exp; }
+    | DEC { 
+        Expression* exp = (Expression*)calloc(1, sizeof(Expression));
+        exp->type = strdup("DOUBLE");
+        exp->value = strdup($1);
+
+        $$ = exp; }
+    | DECF { 
+        Expression* exp = (Expression*)calloc(1, sizeof(Expression));
+        exp->type = strdup("FLOAT");
+        exp->value = strdup($1);
+
+        $$ = exp; }
+    | BOOLEAN { 
+        Expression* exp = (Expression*)calloc(1, sizeof(Expression));
+        exp->type = strdup("BOOLEAN");
+        exp->value = strdup($1);
+
+        $$ = exp; }
+    | CHR { 
+        Expression* exp = (Expression*)calloc(1, sizeof(Expression));
+        exp->type = strdup("CHARACTER");
+        exp->value = strdup($1);
+        $$ = exp; }
+
+expression:
+      primitive_values { $$ = $1; }
+    | ID {
+        Expression* exp = (Expression*)calloc(1, sizeof(Expression));
+        exp->type = "ID";
+        exp->value = strdup($1);
+        $$ = exp;
+        }
+    | expression '+' expression {
+        Expression* exp = (Expression*)calloc(1, sizeof(Expression));
+        exp->type = "SUM";
+        exp->value = strdup("+");
+        exp->left = $1;
+        exp->right = $3;
+        $$ = exp;
     }
-
-    ///* bool ID = true
-    | BOOL ID '=' BOOLEAN {
-        // ? Crear instrucción
-        Instruccion* instP = (Instruccion*)malloc(sizeof(Instruccion));
-        instP->type = "DECLARATION";
-        instP->id = $2;
-        instP->dataType = strdup("bool");
-        instP->line = @2.first_line;
-        instP->column = @2.first_column;
-
-        // ? Crear expresión
-        Expression* exp = (Expression*)malloc(sizeof(Expression));
-        exp->type = strdup("bool");
-        exp->value = strdup($4);
-        exp->line = @4.first_line;
-        exp->column = @4.first_column;
-
-        instP->value = exp;
-        $$ = instP;
+    | expression '-' expression {
+        Expression* exp = (Expression*)calloc(1, sizeof(Expression));
+        exp->type = "SUBTRACT";
+        exp->value = strdup("-");
+        exp->left = $1;
+        exp->right = $3;
+        $$ = exp;
     }
-
-    //* Char ID = 'c'
-    | CHAR ID '=' CHR {
-        // ? Crear instrucción
-        Instruccion* instP = (Instruccion*)malloc(sizeof(Instruccion));
-        instP->type = "DECLARATION";
-        instP->id = $2;
-        instP->dataType = strdup("char");
-        instP->line = @2.first_line;
-        instP->column = @2.first_column;
-
-        // ? Crear expresión
-        Expression* exp = (Expression*)malloc(sizeof(Expression));
-        exp->type = strdup("char");
-        exp->value = strdup($4);
-        exp->line = @4.first_line;
-        exp->column = @4.first_column;
-
-        instP->value = exp;
-        $$ = instP;
+    | expression '*' expression {
+        Expression* exp = (Expression*)calloc(1, sizeof(Expression));
+        exp->type = "MULTIPLICATION";
+        exp->value = strdup("*");
+        exp->left = $1;
+        exp->right = $3;
+        $$ = exp;
     }
+    | expression '/' expression {
+        Expression* exp = (Expression*)calloc(1, sizeof(Expression));
+        exp->type = "DIVIDE";
+        exp->value = strdup("/");
+        exp->left = $1;
+        exp->right = $3;
+        $$ = exp;
+    }
+    | '(' expression ')' { $$ = $2; }
+    | '(' primitive_types ')' expression {
+        Expression* exp = (Expression*)calloc(1, sizeof(Expression));
+        exp->type = "CASTING";
+        exp->value = $2;
+        exp->left = $4;
+        $$ = exp;
+    }
+    ;
 
 %%
 
@@ -189,6 +227,7 @@ int yyerror(const char *s)
     printf("Syntax Error: %s en línea %d, columna %d\n", s, yylloc.first_line, yylloc.first_column);
     Error *error = malloc(sizeof(Error));
     error->type = strdup("Sintáctico");
+    error->environment = strdup("-");
     error->message = strdup(s);
     error->line = yylloc.first_line;
     error->column = yylloc.first_column;

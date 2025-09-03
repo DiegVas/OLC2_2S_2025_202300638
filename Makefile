@@ -23,7 +23,9 @@ UI_FILES = $(UI_DIR)/UI.c \
 # Directorio de análisis semantico
 PARSER_DIR = $(SRC)/parser/semantic
 PARSER_FILES = $(PARSER_DIR)/semantic.c \
-               $(PARSER_DIR)/execute.c
+               $(PARSER_DIR)/execute.c \
+               $(PARSER_DIR)/evaluate.c \
+               $(PARSER_DIR)/utils.c
 
 # Archivos modulares de estructuras
 

@@ -32,6 +32,7 @@ int yycolumn = 1;
 
 NUM [0-9]+
 DEC [0-9]+"."[0-9]+
+DECF [0-9]+"."[0-9]+"f"
 ID [A-Za-z][A-Za-z0-9_]*
 STR \"([^\\"]|\\.)*\"
 CHR \'([^\\']|\\.)*\'
@@ -40,13 +41,49 @@ BREAK_LINE \n
 
 %%
 
+"//"[^\n]*      { /* Ignorar comentarios de una línea */ }
+
+"/*"            { /* Inicio de comentario multilínea */
+    int c;
+    while ((c = input()) != 0) {
+        if (c == '\n') {
+            yylineno++;
+            yycolumn = 1;
+        } else {
+            yycolumn++;
+        }
+        if (c == '*') {
+            if ((c = input()) == '/') {
+                yycolumn++;
+                break;
+            } else {
+                unput(c);
+            }
+        }
+    }
+}
+
 ";" return ';';
 
 "=" return '=';
 
+"+" return '+';
+
+"-" return '-';
+
+"*" return '*';
+
+"/" return '/';
+
+"(" return '(';
+
+")" return ')';
+
 "int" return INT;
 
 "float" return FLOAT;
+
+"double" return DOUBLE;
 
 "String" return STRING;
 
@@ -76,18 +113,31 @@ BREAK_LINE \n
     return DEC;
 }
 
+{DECF} {
+    yylval.sval = strdup(yytext);
+    return DECF;
+}
+
 {ID}       {
     yylval.sval = strdup(yytext);
     return ID;
 }
 
 {STR} {
-    yylval.sval = strdup(yytext);
+    size_t len = strlen(yytext);
+    char *sin_comillas = (char *)malloc(len - 1); 
+    strncpy(sin_comillas, yytext + 1, len - 2);
+    sin_comillas[len - 2] = '\0';
+    yylval.sval = sin_comillas;
     return STR;
 }
 
 {CHR} {
-    yylval.sval = strdup(yytext);
+    size_t len = strlen(yytext);
+    char *sin_comillas = (char *)malloc(len - 1);
+    strncpy(sin_comillas, yytext + 1, len - 2);
+    sin_comillas[len - 2] = '\0';
+    yylval.sval = sin_comillas;
     return CHR;
 }
 
@@ -107,6 +157,7 @@ BREAK_LINE \n
 void showError(){
     printf("Other input");
     Error *error = malloc(sizeof(Error));
+    error->environment = strdup("-");
     error->type = strdup("Léxico");
     error->message = strdup("Error léxico: carácter inesperado");
     error->line = yylloc.first_line;
