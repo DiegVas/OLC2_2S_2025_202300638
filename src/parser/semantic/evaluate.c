@@ -15,27 +15,27 @@ symbol *evaluate_expression(Expression *expr, Context *context)
     {
     case EXP_INTEGER:
         result->value = strcmp(expr->value, "UNDEFINED") == 0 ? strdup("0") : strdup(expr->value);
-        result->type = "INTEGER";
+        result->dataType = "INTEGER";
         break;
     case EXP_FLOAT:
         result->value = strcmp(expr->value, "UNDEFINED") == 0 ? strdup("0.0") : strdup(expr->value);
-        result->type = "FLOAT";
+        result->dataType = "FLOAT";
         break;
     case EXP_STRING:
         result->value = strcmp(expr->value, "UNDEFINED") == 0 ? strdup("NULL") : strdup(expr->value);
-        result->type = "STRING";
+        result->dataType = "STRING";
         break;
     case EXP_BOOLEAN:
         result->value = strcmp(expr->value, "UNDEFINED") == 0 ? strdup("false") : strdup(expr->value);
-        result->type = "BOOLEAN";
+        result->dataType = "BOOLEAN";
         break;
     case EXP_CHARACTER:
         result->value = strcmp(expr->value, "UNDEFINED") == 0 ? strdup("'\0'") : strdup(expr->value);
-        result->type = "CHARACTER";
+        result->dataType = "CHARACTER";
         break;
     case EXP_DOUBLE:
         result->value = strcmp(expr->value, "UNDEFINED") == 0 ? strdup("0.0") : strdup(expr->value);
-        result->type = "DOUBLE";
+        result->dataType = "DOUBLE";
         break;
     case EXP_SUM:
         return perform_arithmetic_operation(exprIZQ, exprDER, context, '+');
@@ -54,14 +54,14 @@ symbol *evaluate_expression(Expression *expr, Context *context)
 
         if (cv_right.result_type != TYPE_INTEGER && cv_right.result_type != TYPE_FLOAT && cv_right.result_type != TYPE_DOUBLE)
         {
-            result->type = strdup("UNDEFINED");
+            result->dataType = strdup("UNDEFINED");
             result->value = strdup("Negative operation does not support non-numeric types");
             fprintf(stderr, "Negative operation does not support non-numeric types\n");
-            fprintf(stderr, "Right type: %s\n", right->type);
+            fprintf(stderr, "Right type: %s\n", right->dataType);
             return result;
         }
 
-        result->type = right->type;
+        result->dataType = right->dataType;
         if (cv_right.result_type == TYPE_INTEGER)
         {
             int neg_value = -((int)cv_right.num_value);
@@ -88,6 +88,43 @@ symbol *evaluate_expression(Expression *expr, Context *context)
         return perfom_BITWISE(exprIZQ, exprDER, context, "<<");
     case EXP_BITWISE_RIGHT_SHIFT:
         return perfom_BITWISE(exprIZQ, exprDER, context, ">>");
+    case EXP_EQUALS_OP:
+        return perform_comparative_operation(exprIZQ, exprDER, context, ".equals");
+    case EXP_EQUALS:
+        return perform_comparative_operation(exprIZQ, exprDER, context, "==");
+    case EXP_NOT_EQUALS:
+        return perform_comparative_operation(exprIZQ, exprDER, context, "!=");
+    case EXP_LOGICAL_AND:
+        return perform_comparative_operation(exprIZQ, exprDER, context, "&&");
+    case EXP_LOGICAL_OR:
+        return perform_comparative_operation(exprIZQ, exprDER, context, "||");
+    case EXP_LOGICAL_NOT:
+    {
+        symbol *left = evaluate_expression(expr->left, context);
+
+        if (left->dataType != "BOOLEAN")
+        {
+            result->dataType = strdup("UNDEFINED");
+            result->value = strdup("Logical NOT operation requires a BOOLEAN type");
+            fprintf(stderr, "Logical NOT operation requires a BOOLEAN type\n");
+            fprintf(stderr, "left type: %s\n", left->dataType);
+            return result;
+        }
+
+        bool cv_left = boolean_value(left->value);
+        result->dataType = "BOOLEAN";
+        result->value = (cv_left == true) ? strdup("false") : strdup("true");
+        return result;
+    }
+    case EXP_LESS:
+        return perform_comparative_operation(exprIZQ, exprDER, context, "<");
+    case EXP_GREATER:
+        return perform_comparative_operation(exprIZQ, exprDER, context, ">");
+    case EXP_LESS_EQUALS:
+        return perform_comparative_operation(exprIZQ, exprDER, context, "<=");
+    case EXP_GREATER_EQUALS:
+        return perform_comparative_operation(exprIZQ, exprDER, context, ">=");
+
     case EXP_ID:
     {
         if (SearchID(context->symbols_context, expr->value))
@@ -102,7 +139,7 @@ symbol *evaluate_expression(Expression *expr, Context *context)
             return evaluate_expression(sym_expr, context);
         }
 
-        result->type = "UNDEFINED";
+        result->dataType = "UNDEFINED";
         result->value = "Variable no definida";
         result->environment = context->nombre;
         return result;

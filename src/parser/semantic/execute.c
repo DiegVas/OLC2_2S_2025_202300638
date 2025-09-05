@@ -16,6 +16,7 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
     switch (instruction_type)
     {
     case DECLARATION:
+    {
 
         // ! Ya existe el mismo id en el conxteo
         if (SearchID(symbolTable_C, instruction->id))
@@ -35,29 +36,29 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
 
         evaluated_value = apply_casting_auto(evaluated_value, instruction->type);
 
-        if (strcmp(evaluated_value->type, instruction->type) != 0)
-        {
-
-            // Error: Tipo de dato no coincide
-            Error *new_error = (Error *)malloc(sizeof(Error));
-            new_error->type = "Semantic";
-            char buffer[256];
-            snprintf(buffer, sizeof(buffer), "Tipo de dato no coincide: %s vs %s", evaluated_value->type, instruction->type);
-            new_error->message = strdup(buffer);
-            new_error->environment = strdup(context->nombre);
-            new_error->line = instruction->line;
-            new_error->column = instruction->column;
-            insertError(errorList_C, new_error);
-            return;
-        }
-
-        if (strcmp(evaluated_value->value, "UNDEFINED") == 0)
+        if (strcmp(evaluated_value->dataType, "UNDEFINED") == 0)
         {
             // Error: Evaluación de expresión fallida
             Error *new_error = (Error *)malloc(sizeof(Error));
             new_error->type = "Semantic";
             new_error->environment = context->nombre;
             new_error->message = evaluated_value->value;
+            new_error->line = instruction->line;
+            new_error->column = instruction->column;
+            insertError(errorList_C, new_error);
+            return;
+        }
+
+        if (strcmp(evaluated_value->dataType, instruction->type) != 0)
+        {
+
+            // Error: Tipo de dato no coincide
+            Error *new_error = (Error *)malloc(sizeof(Error));
+            new_error->type = "Semantic";
+            char buffer[256];
+            snprintf(buffer, sizeof(buffer), "Tipo de dato no coincide: %s vs %s", evaluated_value->dataType, instruction->type);
+            new_error->message = strdup(buffer);
+            new_error->environment = strdup(context->nombre);
             new_error->line = instruction->line;
             new_error->column = instruction->column;
             insertError(errorList_C, new_error);
@@ -78,16 +79,17 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
                 new_symbol->id, new_symbol->dataType, new_symbol->value);
 
         Symbol_table_insert(symbolTable_C, new_symbol);
-        /* code */
         break;
+    }
     case ASSIGNMENT:
+    {
 
         symbol *evaluated_assign = evaluate_expression(instruction->value, context);
 
-        if (strcmp(evaluated_assign->type, "UNDEFINED") == 0)
+        if (strcmp(evaluated_assign->dataType, "UNDEFINED") == 0)
         {
             // Error: Evaluación de expresión fallida
-            Error *new_error = (Error *)malloc(sizeof(Error));
+            Error *new_error = (Error *)calloc(1, sizeof(Error));
             new_error->type = "Semantic";
             new_error->environment = context->nombre;
             new_error->message = evaluated_assign->value;
@@ -103,10 +105,9 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
             if (SearchID(ctx->symbols_context, instruction->id))
             {
                 symbol *sym_to_update = SearchSymbol(ctx->symbols_context, instruction->id);
+                symbol *evaluated_value = apply_casting_auto(evaluated_assign, sym_to_update->dataType);
 
-                evaluated_value = apply_casting_auto(evaluated_assign, sym_to_update->dataType);
-
-                if (strcmp(sym_to_update->dataType, evaluated_value->type) != 0)
+                if (strcmp(sym_to_update->dataType, evaluated_value->dataType) != 0)
                 {
                     // Error: Tipo de dato no coincide
                     Error *new_error = (Error *)malloc(sizeof(Error));
@@ -138,11 +139,12 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
         return;
 
         break;
+    }
     case EXP_PRINTLN:
     {
         symbol *print_value = evaluate_expression(instruction->value, context);
 
-        if (strcmp(print_value->type, "UNDEFINED") == 0)
+        if (strcmp(print_value->dataType, "UNDEFINED") == 0)
         {
             // Error: Evaluación de expresión fallida
             Error *new_error = (Error *)malloc(sizeof(Error));
@@ -155,7 +157,17 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
             return;
         }
 
-        printf("%s\n", print_value->value);
+        // Si es string, procesar secuencias de escape
+        if (strcmp(print_value->dataType, "STRING") == 0)
+        {
+            char *processed_string = process_escape_sequences(print_value->value);
+            printf("%s\n", processed_string);
+            free(processed_string);
+        }
+        else
+        {
+            printf("%s\n", print_value->value);
+        }
         break;
     }
     default:

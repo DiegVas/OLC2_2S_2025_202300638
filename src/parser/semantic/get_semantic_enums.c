@@ -28,6 +28,11 @@ OperativeType get_operativeType(const char *type_str)
     return -1;
 }
 
+bool boolean_value(const char *bool_str)
+{
+    return (strcmp(bool_str, "true") == 0) ? true : false;
+}
+
 ExpressionType
 get_expression_type(const char *type_str)
 {
@@ -69,6 +74,25 @@ get_expression_type(const char *type_str)
         return EXP_BITWISE_LEFT_SHIFT;
     if (strcmp(type_str, "BITWISE_RIGHT_SHIFT") == 0)
         return EXP_BITWISE_RIGHT_SHIFT;
-
+    if (strcmp(type_str, "EQUALS_OP") == 0)
+        return EXP_EQUALS_OP;
+    if (strcmp(type_str, "EQUALS") == 0)
+        return EXP_EQUALS;
+    if (strcmp(type_str, "NOT_EQUALS") == 0)
+        return EXP_NOT_EQUALS;
+    if (strcmp(type_str, "LOGICAL_AND") == 0)
+        return EXP_LOGICAL_AND;
+    if (strcmp(type_str, "LOGICAL_OR") == 0)
+        return EXP_LOGICAL_OR;
+    if (strcmp(type_str, "LOGICAL_NOT") == 0)
+        return EXP_LOGICAL_NOT;
+    if (strcmp(type_str, "LESS") == 0)
+        return EXP_LESS;
+    if (strcmp(type_str, "GREATER") == 0)
+        return EXP_GREATER;
+    if (strcmp(type_str, "LESS_EQUALS") == 0)
+        return EXP_LESS_EQUALS;
+    if (strcmp(type_str, "GREATER_EQUALS") == 0)
+        return EXP_GREATER_EQUALS;
     return EXP_UNKNOWN;
 }

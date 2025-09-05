@@ -78,18 +78,26 @@ extern int yydebug;
     BOOL = 272,                    /* BOOL  */
     FINAL = 273,                   /* FINAL  */
     PRINTLN = 274,                 /* PRINTLN  */
-    LEFT_SHIFT = 275,              /* LEFT_SHIFT  */
-    RIGHT_SHIFT = 276,             /* RIGHT_SHIFT  */
-    PLUS_ASSIGN = 277,             /* PLUS_ASSIGN  */
-    MINUS_ASSIGN = 278,            /* MINUS_ASSIGN  */
-    MULT_ASSIGN = 279,             /* MULT_ASSIGN  */
-    DIV_ASSIGN = 280,              /* DIV_ASSIGN  */
-    MOD_ASSIGN = 281,              /* MOD_ASSIGN  */
-    AND_ASSIGN = 282,              /* AND_ASSIGN  */
-    OR_ASSIGN = 283,               /* OR_ASSIGN  */
-    XOR_ASSIGN = 284,              /* XOR_ASSIGN  */
-    LEFT_SHIFT_ASSIGN = 285,       /* LEFT_SHIFT_ASSIGN  */
-    RIGHT_SHIFT_ASSIGN = 286       /* RIGHT_SHIFT_ASSIGN  */
+    EQUALS_OP = 275,               /* EQUALS_OP  */
+    LEFT_SHIFT = 276,              /* LEFT_SHIFT  */
+    RIGHT_SHIFT = 277,             /* RIGHT_SHIFT  */
+    PLUS_ASSIGN = 278,             /* PLUS_ASSIGN  */
+    MINUS_ASSIGN = 279,            /* MINUS_ASSIGN  */
+    MULT_ASSIGN = 280,             /* MULT_ASSIGN  */
+    DIV_ASSIGN = 281,              /* DIV_ASSIGN  */
+    MOD_ASSIGN = 282,              /* MOD_ASSIGN  */
+    AND_ASSIGN = 283,              /* AND_ASSIGN  */
+    OR_ASSIGN = 284,               /* OR_ASSIGN  */
+    XOR_ASSIGN = 285,              /* XOR_ASSIGN  */
+    LEFT_SHIFT_ASSIGN = 286,       /* LEFT_SHIFT_ASSIGN  */
+    RIGHT_SHIFT_ASSIGN = 287,      /* RIGHT_SHIFT_ASSIGN  */
+    EQUALS = 288,                  /* EQUALS  */
+    NOT_EQUALS = 289,              /* NOT_EQUALS  */
+    AND = 290,                     /* AND  */
+    OR = 291,                      /* OR  */
+    NOT = 292,                     /* NOT  */
+    GREATER_EQUALS = 293,          /* GREATER_EQUALS  */
+    LESS_EQUALS = 294              /* LESS_EQUALS  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -104,7 +112,7 @@ union YYSTYPE
     Instruccion* instr;
     Expression* expr;
 
-#line 108 "build/parser.tab.h"
+#line 116 "build/parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

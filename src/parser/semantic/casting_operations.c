@@ -28,7 +28,7 @@ bool is_valid_cast(OperativeType from, OperativeType to)
 // Función para aplicar casting automático
 symbol *apply_casting_auto(symbol *value, const char *target_type)
 {
-    OperativeType from_type = get_operativeType(value->type);
+    OperativeType from_type = get_operativeType(value->dataType);
     OperativeType to_type = get_operativeType(target_type);
 
     if (!is_valid_cast(from_type, to_type))
@@ -38,7 +38,7 @@ symbol *apply_casting_auto(symbol *value, const char *target_type)
         return value; // No necesita casting
 
     symbol *casted = (symbol *)calloc(1, sizeof(symbol));
-    casted->type = strdup(target_type);
+    casted->dataType = strdup(target_type);
     casted->environment = value->environment ? strdup(value->environment) : NULL;
     casted->line = value->line;
     casted->column = value->column;
@@ -118,7 +118,7 @@ bool is_valid_downcast(OperativeType from, OperativeType to)
 // Función para aplicar casting hacia abajo (explícito)
 symbol *apply_casting_manual(symbol *value, const char *target_type)
 {
-    OperativeType from_type = get_operativeType(value->type);
+    OperativeType from_type = get_operativeType(value->dataType);
     OperativeType to_type = get_operativeType(target_type);
 
     if (!is_valid_downcast(from_type, to_type))
@@ -132,7 +132,7 @@ symbol *apply_casting_manual(symbol *value, const char *target_type)
     }
 
     symbol *casted = (symbol *)calloc(1, sizeof(symbol));
-    casted->type = strdup(target_type);
+    casted->dataType = strdup(target_type);
     casted->environment = value->environment ? strdup(value->environment) : NULL;
     casted->line = value->line;
     casted->column = value->column;

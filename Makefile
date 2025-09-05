@@ -28,6 +28,7 @@ PARSER_FILES = $(PARSER_DIR)/semantic.c \
                $(PARSER_DIR)/utils.c \
                $(PARSER_DIR)/get_semantic_enums.c \
                $(PARSER_DIR)/casting_operations.c \
+               $(PARSER_DIR)/comparative_operations.c
 
 # Archivos modulares de estructuras
 

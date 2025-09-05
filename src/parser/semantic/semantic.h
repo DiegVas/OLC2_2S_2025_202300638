@@ -51,6 +51,16 @@ typedef enum ExpressionType
     EXP_BITWISE_XOR,
     EXP_BITWISE_LEFT_SHIFT,
     EXP_BITWISE_RIGHT_SHIFT,
+    EXP_EQUALS_OP,
+    EXP_EQUALS,
+    EXP_NOT_EQUALS,
+    EXP_LOGICAL_AND,
+    EXP_LOGICAL_OR,
+    EXP_LOGICAL_NOT,
+    EXP_LESS,
+    EXP_GREATER,
+    EXP_LESS_EQUALS,
+    EXP_GREATER_EQUALS,
     EXP_UNKNOWN
 } ExpressionType;
 
@@ -61,6 +71,9 @@ symbol *perform_arithmetic_operation(Expression *left, Expression *right, Contex
 symbol *apply_casting_auto(symbol *value, const char *target_type);
 symbol *apply_casting_manual(symbol *value, const char *target_type);
 ConvertedValue convert_operand(symbol *operand);
+char *process_escape_sequences(const char *input);
+symbol *perform_comparative_operation(Expression *exprIZQ, Expression *exprDER, Context *context, char *operator);
+bool boolean_value(const char *bool_str);
 
 symbol *perfom_BITWISE(Expression *exp_left, Expression *exp_right, Context *context, char *operation);
 

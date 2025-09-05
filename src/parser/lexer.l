@@ -65,6 +65,8 @@ BREAK_LINE \n
 
 ";" return ';';
 
+"==" return EQUALS;
+
 "=" return '=';
 
 "+" return '+';
@@ -81,11 +83,25 @@ BREAK_LINE \n
 
 ")" return ')';
 
+"&&" return AND;
+
+"||" return OR;
+
 "&" return '&';
 
 "|" return '|';
 
 "^" return '^';
+
+">=" return GREATER_EQUALS;
+
+'>' return '>';
+
+"<=" return LESS_EQUALS;
+
+'<' return '<';
+
+
 
 "<<" return LEFT_SHIFT;
 
@@ -111,6 +127,10 @@ BREAK_LINE \n
 
 ">>=" return RIGHT_SHIFT_ASSIGN;
 
+"!=" return NOT_EQUALS;
+
+"!" return NOT;
+
 "int" return INT;
 
 "float" return FLOAT;
@@ -126,6 +146,8 @@ BREAK_LINE \n
 "final" return FINAL;
 
 "System.out.println" return PRINTLN;
+
+".equals" return EQUALS_OP;
 
 "true" {
     yylval.sval = strdup(yytext);

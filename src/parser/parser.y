@@ -37,12 +37,16 @@ int yyerror(const char *s);
 /* Palabras reservadas */
 
 %token <sval> INT STRING CHAR FLOAT DOUBLE BOOL FINAL PRINTLN
+%token EQUALS_OP
 
 /* Simboloes dobles o mas */
 
 %token LEFT_SHIFT RIGHT_SHIFT
 %token PLUS_ASSIGN MINUS_ASSIGN MULT_ASSIGN DIV_ASSIGN MOD_ASSIGN 
 %token AND_ASSIGN OR_ASSIGN XOR_ASSIGN LEFT_SHIFT_ASSIGN RIGHT_SHIFT_ASSIGN
+%token EQUALS NOT_EQUALS
+%token AND OR NOT
+%token GREATER_EQUALS LESS_EQUALS
 
 /* Tipo de los no-terminales que llevan valor */
 %type program sentence
@@ -368,7 +372,89 @@ expression:
         exp->value = strdup(">>");
         exp->left = $1;
         exp->right = $3;
-        $$ = exp; };
+        $$ = exp; }
+    //* ID.equals ( expression )
+    | ID EQUALS_OP '(' expression ')' {
+        Expression *exp = (Expression*)calloc(1, sizeof(Expression));   
+        exp->type = "EQUALS_OP";
+        exp->value = strdup(".equals");
+        exp->left = (Expression*)calloc(1, sizeof(Expression));
+        exp->left->type = "ID";
+        exp->left->value = strdup($1);
+        exp->right = $4;
+        $$ = exp; }
+    //* expression == expression
+    | expression EQUALS expression {
+        Expression* exp = (Expression*)calloc(1, sizeof(Expression));
+        exp->type = "EQUALS";
+        exp->value = strdup("==");
+        exp->left = $1;
+        exp->right = $3;
+        $$ = exp; }
+    //* expression != expression
+    | expression NOT_EQUALS expression {
+        Expression* exp = (Expression*)calloc(1, sizeof(Expression));
+        exp->type = "NOT_EQUALS";
+        exp->value = strdup("!=");
+        exp->left = $1;
+        exp->right = $3;
+        $$ = exp; }
+    //* expression > expression
+    | expression '>' expression {
+        Expression* exp = (Expression*)calloc(1, sizeof(Expression));
+        exp->type = "GREATER";
+        exp->value = strdup(">");
+        exp->left = $1;
+        exp->right = $3;
+        $$ = exp; }
+    //* expression < expression
+    | expression '<' expression {
+        Expression* exp = (Expression*)calloc(1, sizeof(Expression));
+        exp->type = "LESS";
+        exp->value = strdup("<");
+        exp->left = $1;
+        exp->right = $3;
+        $$ = exp; }
+    //* expression >= expression
+    | expression GREATER_EQUALS expression {
+        Expression* exp = (Expression*)calloc(1, sizeof(Expression));
+        exp->type = "GREATER_EQUALS";
+        exp->value = strdup(">=");
+        exp->left = $1;
+        exp->right = $3;
+        $$ = exp; }
+    //* expression <= expression
+    | expression LESS_EQUALS expression {
+        Expression* exp = (Expression*)calloc(1, sizeof(Expression));
+        exp->type = "LESS_EQUALS";
+        exp->value = strdup("<=");
+        exp->left = $1;
+        exp->right = $3;
+        $$ = exp; }
+    //* expression && expression
+    | expression AND expression {
+        Expression* exp = (Expression*)calloc(1, sizeof(Expression));
+        exp->type = "LOGICAL_AND";
+        exp->value = strdup("&&");
+        exp->left = $1;
+        exp->right = $3;
+        $$ = exp; }
+    //* expression || expression
+    | expression OR expression {
+        Expression* exp = (Expression*)calloc(1, sizeof(Expression));
+        exp->type = "LOGICAL_OR";
+        exp->value = strdup("||");
+        exp->left = $1;
+        exp->right = $3;
+        $$ = exp; }
+    //* !expression
+    | NOT expression {
+        Expression* exp = (Expression*)calloc(1, sizeof(Expression));
+        exp->type = "LOGICAL_NOT";
+        exp->value = strdup("!");
+        exp->left = $2;
+        $$ = exp; }
+    ;
 
 %%
 
