@@ -1,63 +1,4 @@
 #include "semantic.h"
-#include <string.h>
-
-ExecuteType get_instruction_type(const char *type_str)
-{
-
-    if (strcmp(type_str, "DECLARATION") == 0)
-        return DECLARATION;
-    if (strcmp(type_str, "ASSIGNMENT") == 0)
-        return ASSIGNMENT;
-    if (strcmp(type_str, "PRINTLN") == 0)
-        return EXP_PRINTLN;
-    return UNKNOWN;
-}
-
-OperativeType get_operativeType(const char *type_str)
-{
-    if (strcmp(type_str, "CHARACTER") == 0)
-        return TYPE_CHARACTER;
-    if (strcmp(type_str, "INTEGER") == 0)
-        return TYPE_INTEGER;
-    if (strcmp(type_str, "FLOAT") == 0)
-        return TYPE_FLOAT;
-    if (strcmp(type_str, "DOUBLE") == 0)
-        return TYPE_DOUBLE;
-    if (strcmp(type_str, "STRING") == 0)
-        return TYPE_STRING;
-    return -1;
-}
-
-ExpressionType
-get_expression_type(const char *type_str)
-{
-    if (strcmp(type_str, "ID") == 0)
-        return EXP_ID;
-    if (strcmp(type_str, "INTEGER") == 0)
-        return EXP_INTEGER;
-    if (strcmp(type_str, "FLOAT") == 0)
-        return EXP_FLOAT;
-    if (strcmp(type_str, "STRING") == 0)
-        return EXP_STRING;
-    if (strcmp(type_str, "BOOLEAN") == 0)
-        return EXP_BOOLEAN;
-    if (strcmp(type_str, "CHARACTER") == 0)
-        return EXP_CHARACTER;
-    if (strcmp(type_str, "DOUBLE") == 0)
-        return EXP_DOUBLE;
-    if (strcmp(type_str, "SUM") == 0)
-        return EXP_SUM;
-    if (strcmp(type_str, "SUBTRACT") == 0)
-        return EXP_SUBTRACT;
-    if (strcmp(type_str, "MULTIPLICATION") == 0)
-        return EXP_MULTIPLICATION;
-    if (strcmp(type_str, "DIVIDE") == 0)
-        return EXP_DIVIDE;
-    if (strcmp(type_str, "CASTING") == 0)
-        return EXP_CASTING;
-
-    return UNKNOWN;
-}
 
 ConvertedValue convert_operand(symbol *operand)
 {
@@ -138,6 +79,16 @@ symbol *perform_arithmetic_operation(Expression *exp_left, Expression *exp_right
         }
         final_result = cv_left.num_value / cv_right.num_value;
         break;
+    case '%':
+        if (cv_right.num_value == 0)
+        {
+            // Manejar módulo por cero
+            result->type = strdup("ERROR");
+            result->value = strdup("Modulo by zero");
+            return result;
+        }
+        final_result = (int)cv_left.num_value % (int)cv_right.num_value;
+        break;
     default:
         result->type = strdup("ERROR");
         result->value = strdup("Unknown operation");
@@ -170,191 +121,49 @@ symbol *perform_arithmetic_operation(Expression *exp_left, Expression *exp_right
     return result;
 }
 
-bool is_valid_cast(OperativeType from, OperativeType to)
+symbol *perfom_BITWISE(Expression *exp_left, Expression *exp_right, Context *context, char *operation)
 {
-    // char puede castear a int, float, double
-    if (from == TYPE_CHARACTER && (to == TYPE_INTEGER || to == TYPE_FLOAT || to == TYPE_DOUBLE))
+    symbol *left = evaluate_expression(exp_left, context);
+    symbol *right = evaluate_expression(exp_right, context);
+
+    ConvertedValue cv_left = convert_operand(left);
+    ConvertedValue cv_right = convert_operand(right);
+
+    if (cv_left.result_type != TYPE_INTEGER || cv_right.result_type != TYPE_INTEGER)
     {
-        return true;
-    }
-    // int puede castear a float, double
-    if (from == TYPE_INTEGER && (to == TYPE_FLOAT || to == TYPE_DOUBLE))
-    {
-        return true;
-    }
-    // float puede castear a double
-    if (from == TYPE_FLOAT && to == TYPE_DOUBLE)
-    {
-        return true;
-    }
-    // Tipos iguales son válidos
-    if (from == to)
-    {
-        return true;
-    }
-    return false;
-}
-
-// Función para aplicar casting automático
-symbol *apply_casting_auto(symbol *value, const char *target_type)
-{
-    OperativeType from_type = get_operativeType(value->type);
-    OperativeType to_type = get_operativeType(target_type);
-
-    if (!is_valid_cast(from_type, to_type))
-        return value;
-
-    if (from_type == to_type)
-        return value; // No necesita casting
-
-    symbol *casted = (symbol *)calloc(1, sizeof(symbol));
-    casted->type = strdup(target_type);
-    casted->environment = value->environment ? strdup(value->environment) : NULL;
-    casted->line = value->line;
-    casted->column = value->column;
-
-    // Realizar la conversión del valor
-    char buffer[64];
-    switch (to_type)
-    {
-    case TYPE_INTEGER:
-        if (from_type == TYPE_CHARACTER)
-        {
-            sprintf(buffer, "%d", (int)value->value[0]); // char a int
-        }
-        break;
-
-    case TYPE_FLOAT:
-        if (from_type == TYPE_CHARACTER)
-        {
-            sprintf(buffer, "%.2f", (float)value->value[0]); // char a float
-        }
-        else if (from_type == TYPE_INTEGER)
-        {
-            sprintf(buffer, "%.2f", (float)atoi(value->value)); // int a float
-        }
-        break;
-
-    case TYPE_DOUBLE:
-        if (from_type == TYPE_CHARACTER)
-        {
-            sprintf(buffer, "%.6f", (double)value->value[0]); // char a double
-        }
-        else if (from_type == TYPE_INTEGER)
-        {
-            sprintf(buffer, "%.6f", (double)atoi(value->value)); // int a double
-        }
-        else if (from_type == TYPE_FLOAT)
-        {
-            sprintf(buffer, "%.6f", (double)atof(value->value)); // float a double
-        }
-        break;
-
-    default:
-        strcpy(buffer, value->value);
-        break;
+        symbol *result = (symbol *)calloc(1, sizeof(symbol));
+        result->type = strdup("UNDEFINED");
+        result->value = strdup("Bitwise operations do not support non-integer");
+        fprintf(stderr, "Bitwise operations do not support non-integer types\n");
+        fprintf(stderr, "Left type: %s, Right type: %s\n", left->type, right->type);
+        return result;
     }
 
-    casted->value = strdup(buffer);
-    return casted;
-}
+    symbol *result = (symbol *)calloc(1, sizeof(symbol));
 
-// Función para verificar si el casting hacia abajo es válido
-bool is_valid_downcast(OperativeType from, OperativeType to)
-{
-    // double puede castear a float, int, char
-    if (from == TYPE_DOUBLE && (to == TYPE_FLOAT || to == TYPE_INTEGER || to == TYPE_CHARACTER))
+    int left_val = (int)cv_left.num_value;
+    int right_val = (int)cv_right.num_value;
+    int final_result;
+
+    if (strcmp(operation, "&") == 0)
+        final_result = left_val & right_val;
+    else if (strcmp(operation, "|") == 0)
+        final_result = left_val | right_val;
+    else if (strcmp(operation, "^") == 0)
+        final_result = left_val ^ right_val;
+    else if (strcmp(operation, ">>") == 0)
+        final_result = left_val >> right_val;
+    else if (strcmp(operation, "<<") == 0)
+        final_result = left_val << right_val;
+    else
     {
-        return true;
+        result->type = strdup("UNDEFINED");
+        result->value = strdup("Unknown bitwise operation");
+        return result;
     }
-    // float puede castear a int, char
-    if (from == TYPE_FLOAT && (to == TYPE_INTEGER || to == TYPE_CHARACTER))
-    {
-        return true;
-    }
-    // int puede castear a char
-    if (from == TYPE_INTEGER && to == TYPE_CHARACTER)
-    {
-        return true;
-    }
-    // Tipos iguales son válidos
-    if (from == to)
-    {
-        return true;
-    }
-    return false;
-}
+    result->type = strdup("INTEGER");
+    result->value = (char *)calloc(50, sizeof(char));
+    sprintf(result->value, "%d", final_result);
 
-// Función para aplicar casting hacia abajo (explícito)
-symbol *apply_casting_manual(symbol *value, const char *target_type)
-{
-    OperativeType from_type = get_operativeType(value->type);
-    OperativeType to_type = get_operativeType(target_type);
-
-    if (!is_valid_downcast(from_type, to_type))
-    {
-        return value;
-    }
-
-    if (from_type == to_type)
-    {
-        return value; // No necesita casting
-    }
-
-    symbol *casted = (symbol *)calloc(1, sizeof(symbol));
-    casted->type = strdup(target_type);
-    casted->environment = value->environment ? strdup(value->environment) : NULL;
-    casted->line = value->line;
-    casted->column = value->column;
-
-    // Realizar la conversión del valor (con pérdida de precisión)
-    char buffer[64];
-    switch (to_type)
-    {
-    case TYPE_CHARACTER:
-        if (from_type == TYPE_DOUBLE)
-        {
-            // double a char (toma la parte entera y convierte a ASCII)
-            sprintf(buffer, "%c", (char)((int)atof(value->value)));
-        }
-        else if (from_type == TYPE_FLOAT)
-        {
-            // float a char
-            sprintf(buffer, "%c", (char)((int)atof(value->value)));
-        }
-        else if (from_type == TYPE_INTEGER)
-        {
-            // int a char
-            sprintf(buffer, "%c", (char)atoi(value->value));
-        }
-        break;
-
-    case TYPE_INTEGER:
-        if (from_type == TYPE_DOUBLE)
-        {
-            // double a int (trunca la parte decimal)
-            sprintf(buffer, "%d", (int)atof(value->value));
-        }
-        else if (from_type == TYPE_FLOAT)
-        {
-            // float a int (trunca la parte decimal)
-            sprintf(buffer, "%d", (int)atof(value->value));
-        }
-        break;
-
-    case TYPE_FLOAT:
-        if (from_type == TYPE_DOUBLE)
-        {
-            // double a float (puede perder precisión)
-            sprintf(buffer, "%.2f", (float)atof(value->value));
-        }
-        break;
-
-    default:
-        strcpy(buffer, value->value);
-        break;
-    }
-
-    casted->value = strdup(buffer);
-    return casted;
+    return result;
 }

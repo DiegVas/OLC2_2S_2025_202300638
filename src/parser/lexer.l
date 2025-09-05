@@ -75,9 +75,41 @@ BREAK_LINE \n
 
 "/" return '/';
 
+"%" return '%';
+
 "(" return '(';
 
 ")" return ')';
+
+"&" return '&';
+
+"|" return '|';
+
+"^" return '^';
+
+"<<" return LEFT_SHIFT;
+
+">>" return RIGHT_SHIFT;
+
+"+=" return PLUS_ASSIGN;
+
+"-=" return MINUS_ASSIGN;
+
+"*=" return MULT_ASSIGN;
+
+"/=" return DIV_ASSIGN;
+
+"%=" return MOD_ASSIGN;
+
+"&=" return AND_ASSIGN;
+
+"|=" return OR_ASSIGN;
+
+"^=" return XOR_ASSIGN;
+
+"<<=" return LEFT_SHIFT_ASSIGN;
+
+">>=" return RIGHT_SHIFT_ASSIGN;
 
 "int" return INT;
 

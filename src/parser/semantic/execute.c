@@ -81,7 +81,62 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
         /* code */
         break;
     case ASSIGNMENT:
-        /* code */
+
+        symbol *evaluated_assign = evaluate_expression(instruction->value, context);
+
+        if (strcmp(evaluated_assign->type, "UNDEFINED") == 0)
+        {
+            // Error: Evaluación de expresión fallida
+            Error *new_error = (Error *)malloc(sizeof(Error));
+            new_error->type = "Semantic";
+            new_error->environment = context->nombre;
+            new_error->message = evaluated_assign->value;
+            new_error->line = instruction->line;
+            new_error->column = instruction->column;
+            insertError(errorList_C, new_error);
+            return;
+        }
+
+        Context *ctx = context;
+        while (ctx)
+        {
+            if (SearchID(ctx->symbols_context, instruction->id))
+            {
+                symbol *sym_to_update = SearchSymbol(ctx->symbols_context, instruction->id);
+
+                evaluated_value = apply_casting_auto(evaluated_assign, sym_to_update->dataType);
+
+                if (strcmp(sym_to_update->dataType, evaluated_value->type) != 0)
+                {
+                    // Error: Tipo de dato no coincide
+                    Error *new_error = (Error *)malloc(sizeof(Error));
+                    new_error->type = "Semantic";
+                    char buffer[256];
+                    snprintf(buffer, sizeof(buffer), "Tipo de dato no coincide en asignación: %s vs %s", sym_to_update->dataType, evaluated_assign->type);
+                    new_error->message = strdup(buffer);
+                    new_error->environment = strdup(context->nombre);
+                    new_error->line = instruction->line;
+                    new_error->column = instruction->column;
+                    insertError(errorList_C, new_error);
+                    return;
+                }
+
+                sym_to_update->value = evaluated_assign->value;
+                return;
+            }
+            ctx = ctx->after;
+        }
+
+        // Error: ID no declarado
+        Error *new_error = (Error *)malloc(sizeof(Error));
+        new_error->type = "Semantic";
+        new_error->environment = context->nombre;
+        new_error->message = "ID no declarado";
+        new_error->line = instruction->line;
+        new_error->column = instruction->column;
+        insertError(errorList_C, new_error);
+        return;
+
         break;
     case EXP_PRINTLN:
     {

@@ -1,4 +1,5 @@
 #include "../structures/parser.h"
+#include <string.h>
 
 void semantic_analysis();
 void semantic_analysis_execute(Instruccion *instruction, Context *context);
@@ -41,8 +42,15 @@ typedef enum ExpressionType
     EXP_SUBTRACT,
     EXP_MULTIPLICATION,
     EXP_DIVIDE,
+    EXP_NEGATIVE,
+    EXP_MODULO,
     EXP_CASTING,
     EXP_ID,
+    EXP_BITWISE_AND,
+    EXP_BITWISE_OR,
+    EXP_BITWISE_XOR,
+    EXP_BITWISE_LEFT_SHIFT,
+    EXP_BITWISE_RIGHT_SHIFT,
     EXP_UNKNOWN
 } ExpressionType;
 
@@ -52,3 +60,11 @@ ExpressionType get_expression_type(const char *type_str);
 symbol *perform_arithmetic_operation(Expression *left, Expression *right, Context *context, char operation);
 symbol *apply_casting_auto(symbol *value, const char *target_type);
 symbol *apply_casting_manual(symbol *value, const char *target_type);
+ConvertedValue convert_operand(symbol *operand);
+
+symbol *perfom_BITWISE(Expression *exp_left, Expression *exp_right, Context *context, char *operation);
+
+ExecuteType get_instruction_type(const char *type_str);
+OperativeType get_operativeType(const char *type_str);
+ExpressionType
+get_expression_type(const char *type_str);

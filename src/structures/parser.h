@@ -9,7 +9,10 @@
 
 typedef struct symbol
 {
+    //* El tipo de dato que es
     char *dataType;
+
+    //* Variables, constantes, etc.
     char *type;
     char *subType;
     char *environment;

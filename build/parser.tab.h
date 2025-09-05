@@ -77,7 +77,19 @@ extern int yydebug;
     DOUBLE = 271,                  /* DOUBLE  */
     BOOL = 272,                    /* BOOL  */
     FINAL = 273,                   /* FINAL  */
-    PRINTLN = 274                  /* PRINTLN  */
+    PRINTLN = 274,                 /* PRINTLN  */
+    LEFT_SHIFT = 275,              /* LEFT_SHIFT  */
+    RIGHT_SHIFT = 276,             /* RIGHT_SHIFT  */
+    PLUS_ASSIGN = 277,             /* PLUS_ASSIGN  */
+    MINUS_ASSIGN = 278,            /* MINUS_ASSIGN  */
+    MULT_ASSIGN = 279,             /* MULT_ASSIGN  */
+    DIV_ASSIGN = 280,              /* DIV_ASSIGN  */
+    MOD_ASSIGN = 281,              /* MOD_ASSIGN  */
+    AND_ASSIGN = 282,              /* AND_ASSIGN  */
+    OR_ASSIGN = 283,               /* OR_ASSIGN  */
+    XOR_ASSIGN = 284,              /* XOR_ASSIGN  */
+    LEFT_SHIFT_ASSIGN = 285,       /* LEFT_SHIFT_ASSIGN  */
+    RIGHT_SHIFT_ASSIGN = 286       /* RIGHT_SHIFT_ASSIGN  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -92,7 +104,7 @@ union YYSTYPE
     Instruccion* instr;
     Expression* expr;
 
-#line 96 "build/parser.tab.h"
+#line 108 "build/parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

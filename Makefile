@@ -25,7 +25,9 @@ PARSER_DIR = $(SRC)/parser/semantic
 PARSER_FILES = $(PARSER_DIR)/semantic.c \
                $(PARSER_DIR)/execute.c \
                $(PARSER_DIR)/evaluate.c \
-               $(PARSER_DIR)/utils.c
+               $(PARSER_DIR)/utils.c \
+               $(PARSER_DIR)/get_semantic_enums.c \
+               $(PARSER_DIR)/casting_operations.c \
 
 # Archivos modulares de estructuras
 
