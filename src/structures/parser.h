@@ -83,12 +83,18 @@ typedef struct Expression
     struct Expression *right;
 } Expression;
 
+// Forward declarations
+typedef struct InstruccionList InstruccionList;
+typedef struct IfNodeList IfNodeList;
+typedef struct IfData IfData;
+
 typedef struct Instruccion
 {
     char *InstType;
     char *symbolType;
     char *type;
     char *id;
+    IfData *ifData;
     int line;
     int column;
     Expression *value;
@@ -100,10 +106,31 @@ typedef struct InstruccionNode
     struct InstruccionNode *next;
 } InstruccionNode;
 
-typedef struct InstruccionList
+struct InstruccionList
 {
     InstruccionNode *head;
-} InstruccionList;
+};
+
+// * -- Estructuras para ifs --
+
+struct IfData
+{
+    Expression *condition;
+    InstruccionList *block;
+    InstruccionList *elseBlock;
+    IfNodeList *elseIfs;
+};
+
+typedef struct IfNode
+{
+    struct IfNode *next;
+    IfData *IfData;
+} IfNode;
+
+struct IfNodeList
+{
+    IfNode *head;
+};
 
 // * --- Estructura ASTNode y lista de hijos ---
 
@@ -126,6 +153,7 @@ struct ASTNode
 InstruccionList *InstruccionList_create();
 void InstruccionList_print(InstruccionList *list);
 void InstruccionList_insert(InstruccionList *list, Instruccion *instr);
+InstruccionList *InstruccionList_add(InstruccionList *list, Instruccion *instr);
 void InstruccionList_destroy(InstruccionList *list);
 
 void ASTNode_addChild(ASTNode *parent, ASTNode *child);
@@ -140,5 +168,9 @@ void Symbol_table_destroy(symbol_table *table);
 void Symbol_table_insert(symbol_table *table, symbol *sym);
 bool SearchID(symbol_table *table, char *id);
 symbol *SearchSymbol(symbol_table *table, char *id);
+
+IfNodeList *createIfNodeList();
+void insertIfNode(IfNodeList *list, IfData *IfData);
+void IfNodeList_destroy(IfNodeList *list);
 
 #endif // PARSER_H

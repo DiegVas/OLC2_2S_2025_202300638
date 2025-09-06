@@ -36,7 +36,8 @@ STRUCTURES_DIR = $(SRC)/structures
 STRUCTURES_FILES = $(STRUCTURES_DIR)/Instruction.c \
                   $(STRUCTURES_DIR)/ASTNode.c \
                   $(STRUCTURES_DIR)/Errors.c \
-                  $(STRUCTURES_DIR)/SymbolTable.c
+                  $(STRUCTURES_DIR)/SymbolTable.c \
+                  $(STRUCTURES_DIR)/If_Node.c \
 
 GTK_FLAGS = `pkg-config --cflags --libs gtk+-3.0`
 

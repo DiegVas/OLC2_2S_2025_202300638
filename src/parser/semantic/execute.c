@@ -170,7 +170,59 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
         }
         break;
     }
+    case IF_STATEMENT:
+    {
+        Expression *condition = instruction->ifData->condition;
+        InstruccionList *if_block = instruction->ifData->block;
+        InstruccionList *else_block = instruction->ifData->elseBlock;
+        IfNodeList *else_ifs = instruction->ifData->elseIfs;
+
+        bool condition_value = boolean_value(evaluate_expression(condition, context)->value);
+
+        if (condition_value)
+        {
+            InstruccionNode *curr = if_block->head;
+            while (curr)
+            {
+                semantic_analysis_execute(curr->instr, context);
+                curr = curr->next;
+            }
+        }
+        else
+        {
+            bool executed_elseif = false;
+            IfNodeList *curr_elseif = else_ifs;
+            IfNode *curr_node = curr_elseif ? curr_elseif->head : NULL;
+            while (curr_node && !executed_elseif)
+            {
+                bool elseif_condition_value = boolean_value(evaluate_expression(curr_node->IfData->condition, context)->value);
+                if (elseif_condition_value)
+                {
+                    InstruccionNode *curr = curr_node->IfData->block->head;
+                    while (curr)
+                    {
+                        semantic_analysis_execute(curr->instr, context);
+                        curr = curr->next;
+                    }
+                    executed_elseif = true;
+                }
+                curr_node = curr_node->next;
+            }
+
+            if (!executed_elseif && else_block)
+            {
+                InstruccionNode *curr = else_block->head;
+                while (curr)
+                {
+                    semantic_analysis_execute(curr->instr, context);
+                    curr = curr->next;
+                }
+            }
+        }
+        break;
+    }
     default:
+        fprintf(stderr, "Instrucción no manejada en análisis semántico: %s\n", instruction->InstType);
         break;
     }
 }

@@ -15,8 +15,11 @@ int yyerror(const char *s);
 %define parse.error verbose
 
 %code requires {
+    typedef struct InstruccionList InstruccionList;
     typedef struct Instruccion Instruccion;
     typedef struct Expression Expression;
+    typedef struct IfNodeList IfNodeList;
+    typedef struct IfData IfData;
 }
 
 %locations
@@ -24,7 +27,10 @@ int yyerror(const char *s);
 %union {
     char* sval;
     Instruccion* instr;
+    InstruccionList* instrList;
     Expression* expr;
+    IfData* ifdata;
+    IfNodeList* ifnodelist;
 }
 
 /* Tokens */
@@ -37,6 +43,7 @@ int yyerror(const char *s);
 /* Palabras reservadas */
 
 %token <sval> INT STRING CHAR FLOAT DOUBLE BOOL FINAL PRINTLN
+%token IF ELSE
 %token EQUALS_OP
 
 /* Simboloes dobles o mas */
@@ -49,13 +56,17 @@ int yyerror(const char *s);
 %token GREATER_EQUALS LESS_EQUALS
 
 /* Tipo de los no-terminales que llevan valor */
-%type program sentence
-%type <instr> instruction
+%type <instrList> program sentences
+%type <instr> sentence instruction
 %type <instr> declaration assignment
 %type <sval> primitive_types
 %type <expr> primitive_values
 %type <expr> expression;
 %type <instr> assignment_expression;
+%type <ifdata> IF_STATEMENT
+%type <instrList> ELSE_STATEMENT
+%type <ifnodelist> IF_LIST
+
 
 
 // precedencia menor a mayor
@@ -69,20 +80,41 @@ int yyerror(const char *s);
 
 
 program
-    : sentences { printf("Programa completo\n");
-        
+    : sentences { 
+        printf("Programa completo\n");
+        // Copiar todas las instrucciones a la lista global
+        if ($1 && $1->head) {
+            InstruccionNode *curr = $1->head;
+            while (curr) {
+                InstruccionList_insert(list_tokens, curr->instr);
+                curr = curr->next;
+            }
+        }
+        $$ = $1;
      };
 
 sentences
     : sentences sentence
-        {         }
-    | /* empty */ {  };
+        { 
+            if ($2 != NULL) {
+                InstruccionList_insert($1, $2);
+                $$ = $1;
+            } else {
+                $$ = $1;
+            }
+        }
+    | /* empty */ 
+        { 
+            $$ = InstruccionList_create();
+        };
 
 sentence
     : instruction separator{
-        InstruccionList_insert(list_tokens, $1);
+        $$ = $1;
     }
-    | separator {};
+    | separator {
+        $$ = NULL;
+    };
 
 separator
     : BREAK_LINE {}
@@ -108,7 +140,13 @@ instruction:
         $1->line = @1.first_line;
         $$ = $1;
     }
-    ;
+    | IF_STATEMENT {
+        Instruccion* instP = (Instruccion*)malloc(sizeof(Instruccion));
+        instP->InstType = "IF_STATEMENT";
+        instP->ifData = $1;
+        instP->line = @1.first_line;
+        $$ = instP;
+    };
 
 assignment:
     ID '=' expression {
@@ -453,8 +491,34 @@ expression:
         exp->type = "LOGICAL_NOT";
         exp->value = strdup("!");
         exp->left = $2;
-        $$ = exp; }
-    ;
+        $$ = exp; };
+
+//* CONDICIONALES
+
+IF_STATEMENT :
+    IF '(' expression ')'  '{' BREAK_LINE  sentences '}' IF_LIST  ELSE_STATEMENT {
+        IfData* ifdata = (IfData*)calloc(1, sizeof(IfData));
+        ifdata->condition = $3;
+        ifdata->block = $7;
+        ifdata->elseIfs = $9;
+        ifdata->elseBlock = $10;
+        $$ = ifdata;
+    };
+
+IF_LIST : 
+    /* empty */ { $$ = createIfNodeList(); }
+    |IF_LIST  ELSE IF '(' expression ')'  '{' BREAK_LINE  sentences '}' {
+        IfData* elseIfNode = (IfData*)malloc(sizeof(IfData));
+        elseIfNode->condition = $5;
+        elseIfNode->block = $9;
+        insertIfNode($1, elseIfNode);
+        $$ = $1;
+    };
+
+ELSE_STATEMENT: 
+    /* empty */ { $$ = NULL; }
+    | ELSE '{' BREAK_LINE sentences '}' { $$ = $4; };
+
 
 %%
 

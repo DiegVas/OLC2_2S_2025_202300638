@@ -10,6 +10,8 @@ ExecuteType get_instruction_type(const char *type_str)
         return ASSIGNMENT;
     if (strcmp(type_str, "PRINTLN") == 0)
         return EXP_PRINTLN;
+    if (strcmp(type_str, "IF_STATEMENT") == 0)
+        return IF_STATEMENT;
     return UNKNOWN;
 }
 

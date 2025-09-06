@@ -26,6 +26,7 @@ typedef enum ExecuteType
     DECLARATION,
     ASSIGNMENT,
     EXP_PRINTLN,
+    IF_STATEMENT,
 
     UNKNOWN
 } ExecuteType;

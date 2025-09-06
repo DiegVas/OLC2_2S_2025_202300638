@@ -83,6 +83,10 @@ BREAK_LINE \n
 
 ")" return ')';
 
+"{" return '{';
+
+"}" return '}';
+
 "&&" return AND;
 
 "||" return OR;
@@ -95,11 +99,11 @@ BREAK_LINE \n
 
 ">=" return GREATER_EQUALS;
 
-'>' return '>';
+">" return '>';
 
 "<=" return LESS_EQUALS;
 
-'<' return '<';
+"<" return '<';
 
 
 
@@ -144,6 +148,10 @@ BREAK_LINE \n
 "char" return CHAR;
 
 "final" return FINAL;
+
+"if" return IF;
+
+"else" return ELSE;
 
 "System.out.println" return PRINTLN;
 
