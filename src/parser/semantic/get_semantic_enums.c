@@ -12,6 +12,12 @@ ExecuteType get_instruction_type(const char *type_str)
         return EXP_PRINTLN;
     if (strcmp(type_str, "IF_STATEMENT") == 0)
         return IF_STATEMENT;
+    if (strcmp(type_str, "SWITCH_STATEMENT") == 0)
+        return SWITCH_STATEMENT;
+    if (strcmp(type_str, "WHILE_STATEMENT") == 0)
+        return WHILE_STATEMENT;
+    if (strcmp(type_str, "FOR_STATEMENT") == 0)
+        return FOR_STATEMENT;
     return UNKNOWN;
 }
 

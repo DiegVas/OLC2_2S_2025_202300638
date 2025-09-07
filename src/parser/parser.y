@@ -20,6 +20,8 @@ int yyerror(const char *s);
     typedef struct Expression Expression;
     typedef struct IfNodeList IfNodeList;
     typedef struct IfData IfData;
+    typedef struct SwitchData SwitchData;
+    typedef struct CaseNodeList CaseNodeList;
 }
 
 %locations
@@ -31,6 +33,8 @@ int yyerror(const char *s);
     Expression* expr;
     IfData* ifdata;
     IfNodeList* ifnodelist;
+    CaseNodeList* casenodelist;
+    SwitchData* switchdata;
 }
 
 /* Tokens */
@@ -43,7 +47,8 @@ int yyerror(const char *s);
 /* Palabras reservadas */
 
 %token <sval> INT STRING CHAR FLOAT DOUBLE BOOL FINAL PRINTLN
-%token IF ELSE
+%token IF ELSE SWITCH CASE BREAK DEFAULT
+%token WHILE FOR
 %token EQUALS_OP
 
 /* Simboloes dobles o mas */
@@ -54,11 +59,12 @@ int yyerror(const char *s);
 %token EQUALS NOT_EQUALS
 %token AND OR NOT
 %token GREATER_EQUALS LESS_EQUALS
+%token INCREMENT
 
 /* Tipo de los no-terminales que llevan valor */
 %type <instrList> program sentences
 %type <instr> sentence instruction
-%type <instr> declaration assignment
+%type <instr> declaration assignment WHILE_STATEMENT
 %type <sval> primitive_types
 %type <expr> primitive_values
 %type <expr> expression;
@@ -66,6 +72,10 @@ int yyerror(const char *s);
 %type <ifdata> IF_STATEMENT
 %type <instrList> ELSE_STATEMENT
 %type <ifnodelist> IF_LIST
+%type <switchdata> SWITCH_STATEMENT
+%type <casenodelist> CASES
+%type <instrList> DEFAULT_CASE
+%type <instr> FOR_STATEMENT
 
 
 
@@ -145,8 +155,27 @@ instruction:
         instP->InstType = "IF_STATEMENT";
         instP->ifData = $1;
         instP->line = @1.first_line;
+        instP->column = @1.first_column;
         $$ = instP;
-    };
+    }
+    | SWITCH_STATEMENT {
+        Instruccion* instP = (Instruccion*)malloc(sizeof(Instruccion));
+        instP->InstType = "SWITCH_STATEMENT";
+        instP->switchData = $1;
+        instP->line = @1.first_line;
+        instP->column = @1.first_column;
+        $$ = instP;
+    }
+    | WHILE_STATEMENT {
+        $1->InstType = "WHILE_STATEMENT";
+        $1->line = @1.first_line;
+        $$ = $1; }
+    | FOR_STATEMENT {
+        $1->InstType = "FOR_STATEMENT";
+        $1->line = @1.first_line;
+        $$ = $1; };
+
+//* Asignacion de valores a variables ya existentes
 
 assignment:
     ID '=' expression {
@@ -214,6 +243,14 @@ assignment:
         $1->value->type = "BITWISE_RIGHT_SHIFT";
         $1->value->value = strdup(">>");
         $1->value->right = $3;
+        $$ = $1; }
+    //* ID++
+    | assignment_expression INCREMENT {
+        $1->value->type = "SUM";
+        $1->value->value = strdup("+");
+        $1->value->right = (Expression*)calloc(1, sizeof(Expression));
+        $1->value->right->type = "INTEGER";
+        $1->value->right->value = strdup("1");
         $$ = $1; };
 
 assignment_expression: 
@@ -230,6 +267,8 @@ assignment_expression:
         };
 
 
+//* Declaracion de variables y constantes
+
 declaration: 
     //* int ID = 15
     primitive_types ID '=' expression {
@@ -243,7 +282,7 @@ declaration:
         instP->symbolType = "VARIABLE";
         instP->value = $4;
         $$ = instP; }  
-    // * int x;
+    // * int x
     | primitive_types ID {
         Instruccion* instP = (Instruccion*)malloc(sizeof(Instruccion));
         instP->id = $2;
@@ -257,7 +296,7 @@ declaration:
 
         instP->value = exp;
         $$ = instP; }
-    // * final int ID = 15;
+    // * final int ID = 15
     | FINAL primitive_types ID '=' expression {
         Instruccion* instP = (Instruccion*)malloc(sizeof(Instruccion));
         instP->id = $3;
@@ -269,6 +308,8 @@ declaration:
 
 
 
+//* Tipos primitivos
+
 primitive_types:
     INT { $$ = strdup("INTEGER"); }
     | STRING { $$ = strdup("STRING"); }
@@ -276,6 +317,8 @@ primitive_types:
     | FLOAT { $$ = strdup("FLOAT"); }
     | BOOL { $$ = strdup("BOOLEAN"); }
     | CHAR { $$ = strdup("CHARACTER"); };
+
+//* Valores primitivos
 
 primitive_values:
     NUM { 
@@ -495,6 +538,7 @@ expression:
 
 //* CONDICIONALES
 
+// ? IF ELSE
 IF_STATEMENT :
     IF '(' expression ')'  '{' BREAK_LINE  sentences '}' IF_LIST  ELSE_STATEMENT {
         IfData* ifdata = (IfData*)calloc(1, sizeof(IfData));
@@ -519,6 +563,77 @@ ELSE_STATEMENT:
     /* empty */ { $$ = NULL; }
     | ELSE '{' BREAK_LINE sentences '}' { $$ = $4; };
 
+// ? SWITCH CASE
+SWITCH_STATEMENT:
+    SWITCH '(' ID ')' '{' BREAK_LINE CASES DEFAULT_CASE '}' {
+        SwitchData* switchdata = (SwitchData*)malloc(sizeof(SwitchData));
+        switchdata->condition = strdup($3);
+        switchdata->cases = $7;
+        switchdata->defaultCase = $8;
+        $$ = switchdata;
+    };
+
+
+
+CASES:
+    /* empty */ { $$ = CaseNodeList_create(); }
+    | CASES CASE primitive_values ':' BREAK_LINE sentences BREAK ';' BREAK_LINE {
+        CaseData* new_case = (CaseData*)malloc(sizeof(CaseData));
+        new_case->condition = $3;
+        new_case->block = $6;
+        CaseNodeList_add($1, new_case);
+        $$ = $1;
+    };
+
+
+DEFAULT_CASE:
+    /* empty */ { $$ = NULL; }
+    | DEFAULT ':' BREAK_LINE sentences { $$ = $4; };
+
+
+// * BLUCLES
+
+// ? WHILE
+
+WHILE_STATEMENT:
+    WHILE '(' expression ')' '{' BREAK_LINE sentences '}' {
+        Instruccion* instP = (Instruccion*)malloc(sizeof(Instruccion));
+        instP->whileData = (WhileData*)malloc(sizeof(WhileData));
+        instP->whileData->condition = $3;
+        instP->whileData->block = $7;
+        instP->column = @1.first_column;
+        $$ = instP;
+    };
+
+// ? FOR SIMPLE
+
+FOR_STATEMENT:
+    FOR '(' declaration ';' expression ';' ID INCREMENT ')' '{' BREAK_LINE sentences '}' {
+        Instruccion* instP = (Instruccion*)malloc(sizeof(Instruccion));
+        instP->forData = (ForData*)malloc(sizeof(ForData));
+        instP->forData->init = $3;
+        instP->forData->init->InstType = "DECLARATION";
+        instP->forData->init->line = @1.first_line;
+        instP->forData->condition = $5;
+
+        Instruccion* updateInst = (Instruccion*)malloc(sizeof(Instruccion));
+        updateInst->id = $7;
+        updateInst->InstType = "ASSIGNMENT";
+        updateInst->value = (Expression*)calloc(1, sizeof(Expression));
+        updateInst->value->left = (Expression*)calloc(1, sizeof(Expression));
+        updateInst->value->left->type = "ID";
+        updateInst->value->left->value = strdup($7);
+        updateInst->value->type = "SUM";
+        updateInst->value->value = strdup("+");
+        updateInst->value->right = (Expression*)calloc(1, sizeof(Expression));
+        updateInst->value->right->type = "INTEGER";
+        updateInst->value->right->value = strdup("1");
+
+        instP->forData->update = updateInst;
+        instP->forData->block = $12;
+        instP->column = @1.first_column;
+        $$ = instP;
+    };
 
 %%
 

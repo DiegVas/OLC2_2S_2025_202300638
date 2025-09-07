@@ -64,20 +64,11 @@ BREAK_LINE \n
 }
 
 ";" return ';';
+":" return ':';
 
 "==" return EQUALS;
 
 "=" return '=';
-
-"+" return '+';
-
-"-" return '-';
-
-"*" return '*';
-
-"/" return '/';
-
-"%" return '%';
 
 "(" return '(';
 
@@ -87,25 +78,15 @@ BREAK_LINE \n
 
 "}" return '}';
 
+"++" return INCREMENT;
+
 "&&" return AND;
 
 "||" return OR;
 
-"&" return '&';
-
-"|" return '|';
-
-"^" return '^';
-
 ">=" return GREATER_EQUALS;
 
-">" return '>';
-
 "<=" return LESS_EQUALS;
-
-"<" return '<';
-
-
 
 "<<" return LEFT_SHIFT;
 
@@ -135,6 +116,26 @@ BREAK_LINE \n
 
 "!" return NOT;
 
+"+" return '+';
+
+"-" return '-';
+
+"*" return '*';
+
+"/" return '/';
+
+"%" return '%';
+
+"&" return '&';
+
+"|" return '|';
+
+"^" return '^';
+
+"<" return '<';
+
+">" return '>';
+
 "int" return INT;
 
 "float" return FLOAT;
@@ -147,6 +148,8 @@ BREAK_LINE \n
 
 "char" return CHAR;
 
+
+
 "final" return FINAL;
 
 "if" return IF;
@@ -156,6 +159,18 @@ BREAK_LINE \n
 "System.out.println" return PRINTLN;
 
 ".equals" return EQUALS_OP;
+
+"switch" return SWITCH;
+
+"case" return CASE;
+
+"break" return BREAK;
+
+"default" return DEFAULT;
+
+"while" return WHILE;
+
+"for" return FOR;
 
 "true" {
     yylval.sval = strdup(yytext);

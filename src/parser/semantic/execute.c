@@ -17,7 +17,6 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
     {
     case DECLARATION:
     {
-
         // ! Ya existe el mismo id en el conxteo
         if (SearchID(symbolTable_C, instruction->id))
         {
@@ -85,6 +84,8 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
     {
 
         symbol *evaluated_assign = evaluate_expression(instruction->value, context);
+
+        fprintf(stderr, "Evaluated assignment: Type: %s, Value: %s\n", evaluated_assign->dataType, evaluated_assign->value);
 
         if (strcmp(evaluated_assign->dataType, "UNDEFINED") == 0)
         {
@@ -179,12 +180,17 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
 
         bool condition_value = boolean_value(evaluate_expression(condition, context)->value);
 
+        Context *ctx_if = malloc(sizeof(Context));
+        ctx_if->after = context;
+        ctx_if->symbols_context = Symbol_table_create();
+        ctx_if->nombre = "If";
+
         if (condition_value)
         {
             InstruccionNode *curr = if_block->head;
             while (curr)
             {
-                semantic_analysis_execute(curr->instr, context);
+                semantic_analysis_execute(curr->instr, ctx_if);
                 curr = curr->next;
             }
         }
@@ -201,7 +207,7 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
                     InstruccionNode *curr = curr_node->IfData->block->head;
                     while (curr)
                     {
-                        semantic_analysis_execute(curr->instr, context);
+                        semantic_analysis_execute(curr->instr, ctx_if);
                         curr = curr->next;
                     }
                     executed_elseif = true;
@@ -214,13 +220,149 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
                 InstruccionNode *curr = else_block->head;
                 while (curr)
                 {
-                    semantic_analysis_execute(curr->instr, context);
+                    semantic_analysis_execute(curr->instr, ctx_if);
                     curr = curr->next;
                 }
             }
         }
         break;
     }
+    case SWITCH_STATEMENT:
+    {
+        char *switch_id = instruction->switchData->condition;
+
+        Expression *switch_id_value = (Expression *)calloc(1, sizeof(Expression));
+        switch_id_value->type = "ID";
+        switch_id_value->value = switch_id;
+
+        Context *ctx_switch = malloc(sizeof(Context));
+        ctx_switch->after = context;
+        ctx_switch->symbols_context = Symbol_table_create();
+        ctx_switch->nombre = "Switch";
+
+        symbol *switch_value = evaluate_expression(switch_id_value, context);
+
+        if (strcmp(switch_value->dataType, "UNDEFINED") == 0)
+        {
+            // Error: ID no declarado
+            Error *new_error = (Error *)malloc(sizeof(Error));
+            new_error->type = "Semantic";
+            new_error->environment = context->nombre;
+            new_error->message = "ID no declarado en switch";
+            new_error->line = instruction->line;
+            new_error->column = instruction->column;
+            insertError(errorList_C, new_error);
+            return;
+        }
+
+        bool case_executed = false;
+
+        Expression *exp_condition = (Expression *)calloc(1, sizeof(Expression));
+        exp_condition->type = "EQUALS";
+        exp_condition->value = strdup("==");
+        exp_condition->left = switch_id_value;
+
+        CaseNode *curr_case = instruction->switchData->cases ? instruction->switchData->cases->head : NULL;
+        while (curr_case && !case_executed)
+        {
+
+            exp_condition->right = curr_case->caseData->condition;
+
+            symbol *case_condition = evaluate_expression(exp_condition, context);
+
+            bool case_condition_bool = boolean_value(case_condition->value);
+
+            if (case_condition_bool)
+            {
+
+                ctx_switch->nombre = "Case";
+
+                InstruccionNode *curr_instr = curr_case->caseData->block->head;
+                while (curr_instr)
+                {
+                    semantic_analysis_execute(curr_instr->instr, ctx_switch);
+                    curr_instr = curr_instr->next;
+                }
+                case_executed = true;
+            }
+            curr_case = curr_case->next;
+        }
+
+        if (!case_executed && instruction->switchData->defaultCase)
+        {
+            ctx_switch->nombre = "Default";
+
+            InstruccionNode *curr_instr = instruction->switchData->defaultCase->head;
+            while (curr_instr)
+            {
+                semantic_analysis_execute(curr_instr->instr, ctx_switch);
+                curr_instr = curr_instr->next;
+            }
+        }
+
+        break;
+    }
+    case WHILE_STATEMENT:
+    {
+        Expression *condition = instruction->whileData->condition;
+        InstruccionList *while_block = instruction->whileData->block;
+
+        Context *ctx_while = malloc(sizeof(Context));
+        ctx_while->after = context;
+        ctx_while->symbols_context = Symbol_table_create();
+        ctx_while->nombre = "While";
+
+        symbol *evaluated_while = evaluate_expression(condition, context);
+        bool condition_value = boolean_value(evaluated_while->value);
+
+        while (condition_value)
+        {
+            InstruccionNode *curr = while_block->head;
+            while (curr)
+            {
+                semantic_analysis_execute(curr->instr, ctx_while);
+                curr = curr->next;
+            }
+
+            condition_value = boolean_value(evaluate_expression(condition, context)->value);
+        }
+        break;
+    }
+    case FOR_STATEMENT:
+    {
+        Instruccion *init = instruction->forData->init;
+        Expression *condition = instruction->forData->condition;
+        Instruccion *update = instruction->forData->update;
+        InstruccionList *for_block = instruction->forData->block;
+
+        Context *ctx_for = malloc(sizeof(Context));
+        ctx_for->after = context;
+        ctx_for->symbols_context = Symbol_table_create();
+        ctx_for->nombre = "For";
+
+        semantic_analysis_execute(init, ctx_for);
+        fprintf(stderr, "For loop initialization executed.\n");
+
+        symbol *evaluated_for = evaluate_expression(condition, ctx_for);
+        bool condition_value = boolean_value(evaluated_for->value);
+
+        while (condition_value)
+        {
+            InstruccionNode *curr = for_block->head;
+            while (curr)
+            {
+                semantic_analysis_execute(curr->instr, ctx_for);
+                curr = curr->next;
+            }
+
+            // Ejecutar actualización
+            semantic_analysis_execute(update, ctx_for);
+
+            condition_value = boolean_value(evaluate_expression(condition, ctx_for)->value);
+        }
+        break;
+    }
+
     default:
         fprintf(stderr, "Instrucción no manejada en análisis semántico: %s\n", instruction->InstType);
         break;

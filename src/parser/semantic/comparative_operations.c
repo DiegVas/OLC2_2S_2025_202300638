@@ -13,13 +13,10 @@ symbol *perform_comparative_operation(Expression *exprIZQ, Expression *exprDER, 
     ConvertedValue cv_left = convert_operand(left);
     ConvertedValue cv_right = convert_operand(right);
 
-    fprintf(stderr, "Comparative operation: %s %s %s\n", left->dataType, operator, right->dataType);
     if (strcmp(left->dataType, right->dataType) != 0)
     {
         result->dataType = strdup("UNDEFINED");
         result->value = strdup("Comparative operation requires both operands to be of the same type");
-        fprintf(stderr, "Comparative operation requires both operands to be of the same type\n");
-        fprintf(stderr, "Left type: %s, Right type: %s\n", left->dataType, right->dataType);
         return result;
     }
 
@@ -40,7 +37,6 @@ symbol *perform_comparative_operation(Expression *exprIZQ, Expression *exprDER, 
         {
             result->dataType = strdup("UNDEFINED");
             result->value = strdup("Only '==' and '!=' operators are supported for BOOLEAN type");
-            fprintf(stderr, "Only '==' and '!=' operators are supported for BOOLEAN type\n");
             return result;
         }
     }

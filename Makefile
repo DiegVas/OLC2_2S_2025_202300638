@@ -38,6 +38,7 @@ STRUCTURES_FILES = $(STRUCTURES_DIR)/Instruction.c \
                   $(STRUCTURES_DIR)/Errors.c \
                   $(STRUCTURES_DIR)/SymbolTable.c \
                   $(STRUCTURES_DIR)/If_Node.c \
+                  $(STRUCTURES_DIR)/Switch_case.c \
 
 GTK_FLAGS = `pkg-config --cflags --libs gtk+-3.0`
 

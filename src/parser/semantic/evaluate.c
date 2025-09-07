@@ -127,18 +127,24 @@ symbol *evaluate_expression(Expression *expr, Context *context)
 
     case EXP_ID:
     {
-        if (SearchID(context->symbols_context, expr->value))
-        {
-            symbol *sym = SearchSymbol(context->symbols_context, expr->value);
-            fprintf(stderr, "DEBUG: Found symbol %s of type %s with value %s\n", sym->id, sym->dataType, sym->value);
-            Expression *sym_expr = (Expression *)calloc(1, sizeof(Expression));
-            sym_expr->type = sym->dataType;
-            sym_expr->value = sym->value;
-            sym_expr->line = *(sym->line);
-            sym_expr->column = *(sym->column);
-            return evaluate_expression(sym_expr, context);
-        }
 
+        symbol_node *curr = context->symbols_context->head;
+        Context *ctx_search = context;
+        while (ctx_search)
+        {
+            if (SearchID(ctx_search->symbols_context, expr->value))
+            {
+                symbol *sym = SearchSymbol(ctx_search->symbols_context, expr->value);
+                fprintf(stderr, "DEBUG: Found symbol %s of type %s with value %s\n", sym->id, sym->dataType, sym->value);
+                Expression *sym_expr = (Expression *)calloc(1, sizeof(Expression));
+                sym_expr->type = sym->dataType;
+                sym_expr->value = sym->value;
+                sym_expr->line = *(sym->line);
+                sym_expr->column = *(sym->column);
+                return evaluate_expression(sym_expr, ctx_search);
+            }
+            ctx_search = ctx_search->after;
+        }
         result->dataType = "UNDEFINED";
         result->value = "Variable no definida";
         result->environment = context->nombre;

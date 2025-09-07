@@ -87,6 +87,14 @@ typedef struct Expression
 typedef struct InstruccionList InstruccionList;
 typedef struct IfNodeList IfNodeList;
 typedef struct IfData IfData;
+typedef struct ForData ForData;
+typedef struct WhileData
+{
+    Expression *condition;
+    InstruccionList *block;
+} WhileData;
+
+typedef struct SwitchData SwitchData;
 
 typedef struct Instruccion
 {
@@ -95,6 +103,9 @@ typedef struct Instruccion
     char *type;
     char *id;
     IfData *ifData;
+    SwitchData *switchData;
+    WhileData *whileData;
+    ForData *forData;
     int line;
     int column;
     Expression *value;
@@ -109,6 +120,14 @@ typedef struct InstruccionNode
 struct InstruccionList
 {
     InstruccionNode *head;
+};
+
+struct ForData
+{
+    Instruccion *init;
+    Expression *condition;
+    Instruccion *update;
+    InstruccionList *block;
 };
 
 // * -- Estructuras para ifs --
@@ -130,6 +149,32 @@ typedef struct IfNode
 struct IfNodeList
 {
     IfNode *head;
+};
+
+typedef struct CaseNodeList CaseNodeList;
+
+struct SwitchData
+{
+    char *condition;
+    CaseNodeList *cases;
+    InstruccionList *defaultCase;
+};
+
+typedef struct CaseData
+{
+    Expression *condition;
+    InstruccionList *block;
+} CaseData;
+
+typedef struct CaseNode
+{
+    struct CaseNode *next;
+    CaseData *caseData;
+} CaseNode;
+
+struct CaseNodeList
+{
+    CaseNode *head;
 };
 
 // * --- Estructura ASTNode y lista de hijos ---
@@ -172,5 +217,8 @@ symbol *SearchSymbol(symbol_table *table, char *id);
 IfNodeList *createIfNodeList();
 void insertIfNode(IfNodeList *list, IfData *IfData);
 void IfNodeList_destroy(IfNodeList *list);
+
+CaseNodeList *CaseNodeList_create();
+void CaseNodeList_add(CaseNodeList *list, CaseData *caseData);
 
 #endif // PARSER_H

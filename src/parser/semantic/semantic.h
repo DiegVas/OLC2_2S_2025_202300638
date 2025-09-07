@@ -27,7 +27,9 @@ typedef enum ExecuteType
     ASSIGNMENT,
     EXP_PRINTLN,
     IF_STATEMENT,
-
+    SWITCH_STATEMENT,
+    WHILE_STATEMENT,
+    FOR_STATEMENT,
     UNKNOWN
 } ExecuteType;
 
