@@ -54,31 +54,6 @@ GtkWidget *create_reports_panel()
     gtk_widget_override_color(ast_view, GTK_STATE_FLAG_NORMAL, &ast_fg_color);
 
     GtkTextBuffer *ast_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(ast_view));
-    gtk_text_buffer_set_text(ast_buffer,
-                             "Abstract Syntax Tree (AST)\n"
-                             "=========================\n\n"
-                             "Program\n"
-                             "├── ClassDeclaration: Main\n"
-                             "│   └── MethodDeclaration: main\n"
-                             "│       └── Block\n"
-                             "│           ├── VariableDeclaration: int x = 10\n"
-                             "│           ├── VariableDeclaration: float y = 3.14f\n"
-                             "│           ├── VariableDeclaration: String message = \"Hello, JavaLang!\"\n"
-                             "│           ├── MethodCall: System.out.println(message)\n"
-                             "│           ├── MethodCall: System.out.println(\"x = \" + x)\n"
-                             "│           ├── IfStatement\n"
-                             "│           │   ├── Condition: x > 5\n"
-                             "│           │   └── Block\n"
-                             "│           │       └── MethodCall: System.out.println(\"x is greater than 5\")\n"
-                             "│           ├── VariableDeclaration: int[] numbers = {1, 2, 3, 4, 5}\n"
-                             "│           └── ForLoop\n"
-                             "│               ├── Init: int i = 0\n"
-                             "│               ├── Condition: i < numbers.length\n"
-                             "│               ├── Increment: i++\n"
-                             "│               └── Block\n"
-                             "│                   └── MethodCall: System.out.println(\"Number: \" + numbers[i])",
-                             -1);
-
     gtk_container_add(GTK_CONTAINER(ast_scrolled), ast_view);
     gtk_notebook_append_page(GTK_NOTEBOOK(notebook), ast_scrolled, gtk_label_new("AST"));
 
@@ -96,16 +71,16 @@ GtkWidget *create_reports_panel()
     gdk_rgba_parse(&symbols_container_bg, "#0A0A0A");
     gtk_widget_override_background_color(symbols_container, GTK_STATE_FLAG_NORMAL, &symbols_container_bg);
 
-    GtkListStore *symbols_store = gtk_list_store_new(6, G_TYPE_STRING, G_TYPE_STRING,
+    GtkListStore *symbols_store = gtk_list_store_new(7, G_TYPE_STRING, G_TYPE_STRING,
                                                      G_TYPE_STRING, G_TYPE_STRING,
-                                                     G_TYPE_INT, G_TYPE_INT);
+                                                     G_TYPE_STRING, G_TYPE_INT, G_TYPE_INT);
 
     global_widgets->symbols_store = symbols_store;
     GtkWidget *symbols_tree = gtk_tree_view_new_with_model(GTK_TREE_MODEL(global_widgets->symbols_store));
 
     // Columns for symbol table
-    const char *symbols_columns[] = {"ID", "Tipo símbolo", "Tipo dato", "Ámbito", "Línea", "Columna"};
-    for (int i = 0; i < 6; i++)
+    const char *symbols_columns[] = {"ID", "Tipo símbolo", "Tipo dato", "Valor", "Ámbito", "Línea", "Columna"};
+    for (int i = 0; i < 7; i++)
     {
         GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
         GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes(
@@ -212,6 +187,7 @@ void update_symbols_table_safe(GtkListStore *store, symbol_table *table)
         const char *safe_id = get_safe_string(sym->id, "N/A");
         const char *safe_type = get_safe_string(sym->dataType, "N/A");
         const char *safe_subtype = get_safe_string(sym->type, "N/A");
+        const char *safe_value = get_safe_string(sym->value, "N/A");
         const char *safe_environment = get_safe_string(sym->environment, "global");
 
         // Safe line and column access
@@ -238,9 +214,10 @@ void update_symbols_table_safe(GtkListStore *store, symbol_table *table)
                            0, safe_id,
                            1, safe_type,
                            2, safe_subtype,
-                           3, safe_environment,
-                           4, safe_line,
-                           5, safe_column,
+                           3, safe_value,
+                           4, safe_environment,
+                           5, safe_line,
+                           6, safe_column,
                            -1);
 
         curr = curr->next;

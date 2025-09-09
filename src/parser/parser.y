@@ -22,12 +22,15 @@ int yyerror(const char *s);
     typedef struct IfData IfData;
     typedef struct SwitchData SwitchData;
     typedef struct CaseNodeList CaseNodeList;
+    typedef struct List List;
+    typedef struct ListData ListData;
 }
 
 %locations
 
 %union {
     char* sval;
+    int ival;
     Instruccion* instr;
     InstruccionList* instrList;
     Expression* expr;
@@ -35,6 +38,8 @@ int yyerror(const char *s);
     IfNodeList* ifnodelist;
     CaseNodeList* casenodelist;
     SwitchData* switchdata;
+    List* list;
+    ListData* listdata;
 }
 
 /* Tokens */
@@ -47,7 +52,7 @@ int yyerror(const char *s);
 /* Palabras reservadas */
 
 %token <sval> INT STRING CHAR FLOAT DOUBLE BOOL FINAL PRINTLN
-%token IF ELSE SWITCH CASE BREAK DEFAULT
+%token IF ELSE SWITCH CASE BREAK DEFAULT CONTINUE
 %token WHILE FOR
 %token EQUALS_OP
 
@@ -76,7 +81,10 @@ int yyerror(const char *s);
 %type <casenodelist> CASES
 %type <instrList> DEFAULT_CASE
 %type <instr> FOR_STATEMENT
-
+%type <ival> dimensions;
+%type<list> dimension_values_list dimension_expression
+%type<listdata> dimension_value
+%type optional_newlines
 
 
 // precedencia menor a mayor
@@ -132,7 +140,6 @@ separator
 
 
 instruction:
-
     declaration {
         $1->InstType = "DECLARATION";
         $1->line = @1.first_line;
@@ -173,7 +180,21 @@ instruction:
     | FOR_STATEMENT {
         $1->InstType = "FOR_STATEMENT";
         $1->line = @1.first_line;
-        $$ = $1; };
+        $$ = $1; }
+    | BREAK {
+        Instruccion* instP = (Instruccion*)malloc(sizeof(Instruccion));
+        instP->InstType = "BREAK";
+        instP->line = @1.first_line;
+        instP->column = @1.first_column;
+        $$ = instP;
+    }
+    | CONTINUE {
+        Instruccion* instP = (Instruccion*)malloc(sizeof(Instruccion));
+        instP->InstType = "CONTINUE";
+        instP->line = @1.first_line;
+        instP->column = @1.first_column;
+        $$ = instP;
+    };
 
 //* Asignacion de valores a variables ya existentes
 
@@ -305,8 +326,17 @@ declaration:
         instP->symbolType = "CONSTANT";
         instP->value = $5;
         $$ = instP; };
-
-
+    //* int ID[] = expression
+    | primitive_types ID dimensions '=' dimension_expression {
+        Instruccion* instP = (Instruccion*)malloc(sizeof(Instruccion));
+        instP->id = $2;
+        instP->type = $1;
+        instP->arrayValues = (SymbolList*)calloc(1, sizeof(SymbolList));
+        instP->arrayValues->dimension = $3;
+        instP->arrayValues->values = $5;
+        instP->column = @3.first_column;
+        instP->symbolType = "LIST";
+        $$ = instP; };
 
 //* Tipos primitivos
 
@@ -536,6 +566,7 @@ expression:
         exp->left = $2;
         $$ = exp; };
 
+
 //* CONDICIONALES
 
 // ? IF ELSE
@@ -634,6 +665,38 @@ FOR_STATEMENT:
         instP->column = @1.first_column;
         $$ = instP;
     };
+//* Manejo de Arreglos
+
+dimensions
+    : /* empty */ { $$ = 0; }
+    | dimensions '[' ']' { $$ = $1 + 1; };
+
+dimension_expression: 
+    '{' optional_newlines dimension_values_list optional_newlines '}' {$$ = $3; };
+
+dimension_values_list
+    : /* empty */ {  $$ = List_create(); }
+    | dimension_value optional_newlines { 
+        List* list = List_create(); 
+        List_add(list, $1); 
+        $$ = list; 
+    }
+    | dimension_values_list ',' optional_newlines dimension_value optional_newlines {List_add($1, $4); $$ = $1;};
+
+dimension_value:
+    expression { ListData* data = (ListData*)calloc(1, sizeof(ListData));
+                  data->exprData = $1;
+                  $$ = data; }
+    | dimension_expression {
+        ListData* data = (ListData*)calloc(1, sizeof(ListData));
+        data->listData = $1;
+        $$ = data;
+    };
+
+    optional_newlines
+    : /* empty */
+    | optional_newlines BREAK_LINE
+    ;
 
 %%
 

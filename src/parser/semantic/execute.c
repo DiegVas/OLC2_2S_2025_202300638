@@ -2,6 +2,8 @@
 #include "semantic.h"
 #include <string.h>
 
+extern symbol_table *SymbolTable_General;
+
 void semantic_analysis_execute(Instruccion *instruction, Context *context)
 {
 
@@ -17,7 +19,9 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
     {
     case DECLARATION:
     {
+
         // ! Ya existe el mismo id en el conxteo
+
         if (SearchID(symbolTable_C, instruction->id))
         {
             // Error: ID ya declarado en este contexto
@@ -28,6 +32,13 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
             new_error->line = instruction->line;
             new_error->column = instruction->column;
             insertError(errorList_C, new_error);
+            return;
+        }
+        if (strcmp(instruction->symbolType, "LIST") == 0)
+        {
+            fprintf(stderr, "Declaración de lista detectada para ID: %s\n", instruction->id);
+            List *list_values = instruction->arrayValues->values;
+            list_values = evaluate_list(list_values, context);
             return;
         }
 
@@ -84,9 +95,6 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
     {
 
         symbol *evaluated_assign = evaluate_expression(instruction->value, context);
-
-        fprintf(stderr, "Evaluated assignment: Type: %s, Value: %s\n", evaluated_assign->dataType, evaluated_assign->value);
-
         if (strcmp(evaluated_assign->dataType, "UNDEFINED") == 0)
         {
             // Error: Evaluación de expresión fallida
@@ -107,7 +115,6 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
             {
                 symbol *sym_to_update = SearchSymbol(ctx->symbols_context, instruction->id);
                 symbol *evaluated_value = apply_casting_auto(evaluated_assign, sym_to_update->dataType);
-
                 if (strcmp(sym_to_update->dataType, evaluated_value->dataType) != 0)
                 {
                     // Error: Tipo de dato no coincide
@@ -123,6 +130,18 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
                     return;
                 }
 
+                if (strcmp(sym_to_update->type, "CONSTANT") == 0)
+                {
+                    // Error: No se puede modificar una constante
+                    Error *new_error = (Error *)malloc(sizeof(Error));
+                    new_error->type = "Semantic";
+                    new_error->environment = context->nombre;
+                    new_error->message = "No se puede modificar una constante";
+                    new_error->line = instruction->line;
+                    new_error->column = instruction->column;
+                    insertError(errorList_C, new_error);
+                    return;
+                }
                 sym_to_update->value = evaluated_assign->value;
                 return;
             }
@@ -173,12 +192,26 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
     }
     case IF_STATEMENT:
     {
+
         Expression *condition = instruction->ifData->condition;
         InstruccionList *if_block = instruction->ifData->block;
         InstruccionList *else_block = instruction->ifData->elseBlock;
         IfNodeList *else_ifs = instruction->ifData->elseIfs;
 
-        bool condition_value = boolean_value(evaluate_expression(condition, context)->value);
+        symbol *if_condition_value = evaluate_expression(condition, context);
+        if (strcmp(if_condition_value->dataType, "UNDEFINED") == 0)
+        {
+            Error *new_error = (Error *)malloc(sizeof(Error));
+            new_error->type = "Semantic";
+            new_error->environment = context->nombre;
+            new_error->message = if_condition_value->value;
+            new_error->line = instruction->line;
+            new_error->column = instruction->column;
+            insertError(errorList_C, new_error);
+            return;
+        }
+
+        bool condition_value = boolean_value(if_condition_value->value);
 
         Context *ctx_if = malloc(sizeof(Context));
         ctx_if->after = context;
@@ -225,6 +258,7 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
                 }
             }
         }
+        Symbol_table_insertContext(SymbolTable_General, ctx_if->symbols_context);
         break;
     }
     case SWITCH_STATEMENT:
@@ -299,7 +333,7 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
                 curr_instr = curr_instr->next;
             }
         }
-
+        Symbol_table_insertContext(SymbolTable_General, ctx_switch->symbols_context);
         break;
     }
     case WHILE_STATEMENT:
@@ -307,12 +341,23 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
         Expression *condition = instruction->whileData->condition;
         InstruccionList *while_block = instruction->whileData->block;
 
-        Context *ctx_while = malloc(sizeof(Context));
+        Context *ctx_while = calloc(1, sizeof(Context));
         ctx_while->after = context;
         ctx_while->symbols_context = Symbol_table_create();
         ctx_while->nombre = "While";
-
-        symbol *evaluated_while = evaluate_expression(condition, context);
+        fprintf(stderr, "Ejecutando While...\n");
+        symbol *evaluated_while = evaluate_expression(condition, ctx_while);
+        if (strcmp(evaluated_while->dataType, "UNDEFINED") == 0)
+        {
+            Error *new_error = (Error *)malloc(sizeof(Error));
+            new_error->type = "Semantic";
+            new_error->environment = context->nombre;
+            new_error->message = evaluated_while->value;
+            new_error->line = instruction->line;
+            new_error->column = instruction->column;
+            insertError(errorList_C, new_error);
+            return;
+        }
         bool condition_value = boolean_value(evaluated_while->value);
 
         while (condition_value)
@@ -321,11 +366,24 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
             while (curr)
             {
                 semantic_analysis_execute(curr->instr, ctx_while);
+                if (ctx_while->break_instruction)
+                    break;
+
+                if (ctx_while->continue_instruction)
+                {
+                    ctx_while->continue_instruction = false;
+                    break;
+                }
+
                 curr = curr->next;
             }
 
+            if (ctx_while->break_instruction)
+                break;
+
             condition_value = boolean_value(evaluate_expression(condition, context)->value);
         }
+        Symbol_table_insertContext(SymbolTable_General, ctx_while->symbols_context);
         break;
     }
     case FOR_STATEMENT:
@@ -335,16 +393,17 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
         Instruccion *update = instruction->forData->update;
         InstruccionList *for_block = instruction->forData->block;
 
-        Context *ctx_for = malloc(sizeof(Context));
+        Context *ctx_for = calloc(1, sizeof(Context));
         ctx_for->after = context;
         ctx_for->symbols_context = Symbol_table_create();
         ctx_for->nombre = "For";
 
         semantic_analysis_execute(init, ctx_for);
-        fprintf(stderr, "For loop initialization executed.\n");
 
         symbol *evaluated_for = evaluate_expression(condition, ctx_for);
         bool condition_value = boolean_value(evaluated_for->value);
+
+        fprintf(stderr, "Condición inicial del For: %d\n", condition_value);
 
         while (condition_value)
         {
@@ -352,14 +411,95 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
             while (curr)
             {
                 semantic_analysis_execute(curr->instr, ctx_for);
+
+                if (ctx_for->break_instruction)
+                    break;
+
+                if (ctx_for->continue_instruction)
+                {
+                    ctx_for->continue_instruction = false;
+                    break;
+                }
+
                 curr = curr->next;
             }
 
             // Ejecutar actualización
+
+            if (ctx_for->break_instruction)
+                break;
+
+            fprintf(stderr, "Ejecutando actualización del For...\n");
+            fprintf(stderr, "Antes de la actualización, condición: %s\n", update->value->value);
             semantic_analysis_execute(update, ctx_for);
 
             condition_value = boolean_value(evaluate_expression(condition, ctx_for)->value);
+            fprintf(stderr, "nuevo valor de condición: %d\n", condition_value);
         }
+        Symbol_table_insertContext(SymbolTable_General, ctx_for->symbols_context);
+        break;
+    }
+    case BREAK_STATEMENT:
+    {
+        // Manejo de la instrucción BREAK
+        Context *ctx = context;
+        bool found_loop = false;
+        while (ctx)
+        {
+            if (strcmp(ctx->nombre, "For") == 0 || strcmp(ctx->nombre, "While") == 0 || strcmp(ctx->nombre, "Switch") == 0)
+            {
+                ctx->break_instruction = true;
+                found_loop = true;
+                break;
+            }
+            ctx = ctx->after;
+        }
+
+        if (!found_loop)
+        {
+            // Error: BREAK fuera de un contexto de bucle o switch
+            Error *new_error = (Error *)malloc(sizeof(Error));
+            new_error->type = "Semantic";
+            new_error->environment = context->nombre;
+            new_error->message = "BREAK fuera de un contexto de bucle o switch";
+            new_error->line = instruction->line;
+            new_error->column = instruction->column;
+            insertError(errorList_C, new_error);
+            return;
+        }
+
+        break;
+    }
+    case CONTINUE_STATEMENT:
+    {
+        // Manejo de la instrucción CONTINUE
+        Context *ctx = context;
+        bool found_loop = false;
+        while (ctx)
+        {
+            if (strcmp(ctx->nombre, "For") == 0 || strcmp(ctx->nombre, "While") == 0)
+            {
+
+                ctx->continue_instruction = true;
+                found_loop = true;
+                break;
+            }
+            ctx = ctx->after;
+        }
+
+        if (!found_loop)
+        {
+            // Error: CONTINUE fuera de un contexto de bucle
+            Error *new_error = (Error *)malloc(sizeof(Error));
+            new_error->type = "Semantic";
+            new_error->environment = context->nombre;
+            new_error->message = "CONTINUE fuera de un contexto de bucle";
+            new_error->line = instruction->line;
+            new_error->column = instruction->column;
+            insertError(errorList_C, new_error);
+            return;
+        }
+
         break;
     }
 

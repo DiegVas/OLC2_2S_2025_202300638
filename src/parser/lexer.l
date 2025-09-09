@@ -12,6 +12,8 @@ void showError();
 extern ErrorList *list_errors;
 
 int yycolumn = 1;
+int inside_array = 0;
+
 
 
 /* Se ejecuta antes de cada accion, actualiza yylloc y columna */
@@ -26,7 +28,6 @@ int yycolumn = 1;
 %}
 
 %option noyywrap yylineno
-
 
 /* Definiciones */
 
@@ -65,6 +66,7 @@ BREAK_LINE \n
 
 ";" return ';';
 ":" return ':';
+"," return ',';
 
 "==" return EQUALS;
 
@@ -77,6 +79,9 @@ BREAK_LINE \n
 "{" return '{';
 
 "}" return '}';
+
+"[" return '[';
+"]" return ']';
 
 "++" return INCREMENT;
 
@@ -165,6 +170,8 @@ BREAK_LINE \n
 "case" return CASE;
 
 "break" return BREAK;
+
+"continue" return CONTINUE;
 
 "default" return DEFAULT;
 

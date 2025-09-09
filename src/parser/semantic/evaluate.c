@@ -127,9 +127,8 @@ symbol *evaluate_expression(Expression *expr, Context *context)
 
     case EXP_ID:
     {
-
-        symbol_node *curr = context->symbols_context->head;
         Context *ctx_search = context;
+
         while (ctx_search)
         {
             if (SearchID(ctx_search->symbols_context, expr->value))
@@ -143,8 +142,10 @@ symbol *evaluate_expression(Expression *expr, Context *context)
                 sym_expr->column = *(sym->column);
                 return evaluate_expression(sym_expr, ctx_search);
             }
+
             ctx_search = ctx_search->after;
-        }
+         }
+        fprintf(stderr, "DEBUG: Searching in context %s\n", ctx_search ? ctx_search->nombre : "NULL");
         result->dataType = "UNDEFINED";
         result->value = "Variable no definida";
         result->environment = context->nombre;

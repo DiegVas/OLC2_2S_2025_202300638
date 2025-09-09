@@ -5,6 +5,11 @@
 #ifndef TOKEN_LIST_H
 #define TOKEN_LIST_H
 
+typedef struct ListData ListData;
+typedef struct ListNode ListNode;
+typedef struct List List;
+typedef struct SymbolList SymbolList;
+
 //* Tabla de simbolos
 
 typedef struct symbol
@@ -18,6 +23,8 @@ typedef struct symbol
     char *environment;
     char *value;
     char *id;
+    List *arrayValues; // Para arreglos
+    int dimensions;    // Numero de dimensiones del arreglo
 
     int *line;
     int *column;
@@ -42,8 +49,8 @@ typedef struct Context
     struct Context *after;
     struct symbol_table *symbols_context;
     struct ErrorList *errors;
-    bool *continue_instruction;
-    bool *break_instruction;
+    bool continue_instruction;
+    bool break_instruction;
     char *return_type;
     char *return_value;
 
@@ -106,6 +113,7 @@ typedef struct Instruccion
     SwitchData *switchData;
     WhileData *whileData;
     ForData *forData;
+    SymbolList *arrayValues; // Para arreglos
     int line;
     int column;
     Expression *value;
@@ -177,6 +185,30 @@ struct CaseNodeList
     CaseNode *head;
 };
 
+//* Estrucutra para listas genericas
+struct ListData
+{
+    Expression *exprData;
+    List *listData;
+};
+
+struct ListNode
+{
+    struct ListNode *next;
+    ListData *listData;
+};
+
+struct List
+{
+    ListNode *head;
+};
+
+struct SymbolList
+{
+    int dimension;
+    List *values;
+};
+
 // * --- Estructura ASTNode y lista de hijos ---
 
 typedef struct ASTNode ASTNode;
@@ -211,6 +243,7 @@ void insertError(ErrorList *list, Error *error);
 symbol_table *Symbol_table_create();
 void Symbol_table_destroy(symbol_table *table);
 void Symbol_table_insert(symbol_table *table, symbol *sym);
+void Symbol_table_insertContext(symbol_table *global_table, symbol_table *new_context);
 bool SearchID(symbol_table *table, char *id);
 symbol *SearchSymbol(symbol_table *table, char *id);
 
@@ -220,5 +253,9 @@ void IfNodeList_destroy(IfNodeList *list);
 
 CaseNodeList *CaseNodeList_create();
 void CaseNodeList_add(CaseNodeList *list, CaseData *caseData);
+
+List *List_create();
+void List_add(List *list, ListData *listData);
+void List_destroy(List *list);
 
 #endif // PARSER_H

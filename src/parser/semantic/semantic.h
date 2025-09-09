@@ -30,6 +30,8 @@ typedef enum ExecuteType
     SWITCH_STATEMENT,
     WHILE_STATEMENT,
     FOR_STATEMENT,
+    BREAK_STATEMENT,
+    CONTINUE_STATEMENT,
     UNKNOWN
 } ExecuteType;
 
@@ -84,3 +86,4 @@ ExecuteType get_instruction_type(const char *type_str);
 OperativeType get_operativeType(const char *type_str);
 ExpressionType
 get_expression_type(const char *type_str);
+List *evaluate_list(List *list, Context *evaluateContext);

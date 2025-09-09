@@ -46,6 +46,17 @@ void Symbol_table_insert(symbol_table *table, symbol *sym)
     table->head = new_node;
 }
 
+void Symbol_table_insertContext(symbol_table *global_table, symbol_table *new_context)
+{
+
+    symbol_node *current = new_context->head;
+    while (current != NULL)
+    {
+        Symbol_table_insert(global_table, current->data);
+        current = current->next;
+    }
+}
+
 void Symbol_table_destroy(symbol_table *table)
 {
     symbol_node *current = table->head;

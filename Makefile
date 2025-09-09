@@ -28,7 +28,8 @@ PARSER_FILES = $(PARSER_DIR)/semantic.c \
                $(PARSER_DIR)/utils.c \
                $(PARSER_DIR)/get_semantic_enums.c \
                $(PARSER_DIR)/casting_operations.c \
-               $(PARSER_DIR)/comparative_operations.c
+               $(PARSER_DIR)/comparative_operations.c \
+               $(PARSER_DIR)/ListEvaluate.c \
 
 # Archivos modulares de estructuras
 
@@ -39,6 +40,7 @@ STRUCTURES_FILES = $(STRUCTURES_DIR)/Instruction.c \
                   $(STRUCTURES_DIR)/SymbolTable.c \
                   $(STRUCTURES_DIR)/If_Node.c \
                   $(STRUCTURES_DIR)/Switch_case.c \
+                  $(STRUCTURES_DIR)/List.c \
 
 GTK_FLAGS = `pkg-config --cflags --libs gtk+-3.0`
 
