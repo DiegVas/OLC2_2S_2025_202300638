@@ -153,8 +153,6 @@ BREAK_LINE \n
 
 "char" return CHAR;
 
-
-
 "final" return FINAL;
 
 "if" return IF;
@@ -178,6 +176,8 @@ BREAK_LINE \n
 "while" return WHILE;
 
 "for" return FOR;
+
+"new" return NEW;
 
 "true" {
     yylval.sval = strdup(yytext);

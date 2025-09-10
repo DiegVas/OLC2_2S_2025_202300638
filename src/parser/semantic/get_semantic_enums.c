@@ -106,5 +106,7 @@ get_expression_type(const char *type_str)
         return EXP_LESS_EQUALS;
     if (strcmp(type_str, "GREATER_EQUALS") == 0)
         return EXP_GREATER_EQUALS;
+    if (strcmp(type_str, "VECTOR_ACCESS") == 0)
+        return EXP_VECTOR_ACCESS;
     return EXP_UNKNOWN;
 }

@@ -25,3 +25,53 @@ List *evaluate_list(List *list, Context *evaluateContext)
 
     return evaluated_list;
 }
+
+VectorList *evaluate_vector(char *dataType, VectorList *vec, Context *evaluateContext)
+{
+    VectorList *evaluated_vector = VectorList_create();
+    VectorNode *current = vec->head;
+
+    while (current)
+    {
+        if (current->exprData)
+        {
+            symbol *da = evaluate_expression(current->exprData, evaluateContext);
+            da = apply_casting_auto(da, dataType);
+            fprintf(stderr, "Evaluated vector expression: Type=%s, Value=%s\n", da->dataType, da->value);
+            current->value = da;
+        }
+
+        VectorList_addSym(evaluated_vector, current->value);
+        current = current->next;
+    }
+
+    return evaluated_vector;
+}
+
+char *printVector(VectorList *vec)
+{
+    char *result = (char *)calloc(1024, sizeof(char));
+    strcat(result, "[");
+
+    VectorNode *current = vec->head;
+    while (current)
+    {
+        if (current->value)
+        {
+            strcat(result, current->value->value);
+        }
+        else if (current->exprData)
+        {
+            strcat(result, current->exprData->value);
+        }
+
+        if (current->next)
+        {
+            strcat(result, ", ");
+        }
+        current = current->next;
+    }
+
+    strcat(result, "]");
+    return result;
+}

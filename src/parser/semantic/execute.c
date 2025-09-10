@@ -11,7 +11,7 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
     symbol_table *symbolTable_C = context->symbols_context;
 
     // ! Tabla de errores del contexto
-    ErrorList *errorList_C = context->errors;
+    extern ErrorList *list_errors;
 
     ExecuteType instruction_type = get_instruction_type(instruction->InstType);
 
@@ -23,17 +23,9 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
         // ! Ya existe el mismo id en el conxteo
 
         if (SearchID(symbolTable_C, instruction->id))
-        {
             // Error: ID ya declarado en este contexto
-            Error *new_error = (Error *)malloc(sizeof(Error));
-            new_error->environment = strdup(context->nombre);
-            new_error->type = "Semantic";
-            new_error->message = "ID ya declarado en este contexto";
-            new_error->line = instruction->line;
-            new_error->column = instruction->column;
-            insertError(errorList_C, new_error);
-            return;
-        }
+            return Error_exists("ID ya declarado en este contexto", context->nombre, instruction);
+
         if (strcmp(instruction->symbolType, "LIST") == 0)
         {
             fprintf(stderr, "Declaración de lista detectada para ID: %s\n", instruction->id);
@@ -42,22 +34,36 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
             return;
         }
 
+        if (strcmp(instruction->symbolType, "VECTOR") == 0)
+        {
+            VectorList *vec_values = instruction->vectorValues;
+            vec_values = evaluate_vector(instruction->type, vec_values, context);
+            char *vec_str = printVector(vec_values);
+
+            symbol *new_symbol = (symbol *)calloc(1, sizeof(symbol));
+            new_symbol->value = vec_str;
+            new_symbol->dataType = instruction->type;
+            new_symbol->type = instruction->symbolType;
+            new_symbol->id = instruction->id;
+            new_symbol->vectorValues = vec_values;
+            new_symbol->environment = context->nombre;
+            new_symbol->line = &(instruction->line);
+            new_symbol->column = &(instruction->column);
+
+            fprintf(stderr, "Nuevo símbolo de tipo vector: %s, Tipo: %s, Valor: %s\n",
+                    new_symbol->id, new_symbol->dataType, new_symbol->value);
+
+            Symbol_table_insert(symbolTable_C, new_symbol);
+            return;
+        }
+
         symbol *evaluated_value = evaluate_expression(instruction->value, context);
 
         evaluated_value = apply_casting_auto(evaluated_value, instruction->type);
 
         if (strcmp(evaluated_value->dataType, "UNDEFINED") == 0)
-        {
             // Error: Evaluación de expresión fallida
-            Error *new_error = (Error *)malloc(sizeof(Error));
-            new_error->type = "Semantic";
-            new_error->environment = context->nombre;
-            new_error->message = evaluated_value->value;
-            new_error->line = instruction->line;
-            new_error->column = instruction->column;
-            insertError(errorList_C, new_error);
-            return;
-        }
+            return Error_exists(evaluated_value->value, context->nombre, instruction);
 
         if (strcmp(evaluated_value->dataType, instruction->type) != 0)
         {
@@ -71,7 +77,7 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
             new_error->environment = strdup(context->nombre);
             new_error->line = instruction->line;
             new_error->column = instruction->column;
-            insertError(errorList_C, new_error);
+            insertError(list_errors, new_error);
             return;
         }
 
@@ -96,17 +102,8 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
 
         symbol *evaluated_assign = evaluate_expression(instruction->value, context);
         if (strcmp(evaluated_assign->dataType, "UNDEFINED") == 0)
-        {
-            // Error: Evaluación de expresión fallida
-            Error *new_error = (Error *)calloc(1, sizeof(Error));
-            new_error->type = "Semantic";
-            new_error->environment = context->nombre;
-            new_error->message = evaluated_assign->value;
-            new_error->line = instruction->line;
-            new_error->column = instruction->column;
-            insertError(errorList_C, new_error);
-            return;
-        }
+            //! Error: Evaluación de expresión fallida
+            return Error_exists("Evaluación de expresión fallida", context->nombre, instruction);
 
         Context *ctx = context;
         while (ctx)
@@ -117,17 +114,10 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
                 symbol *evaluated_value = apply_casting_auto(evaluated_assign, sym_to_update->dataType);
                 if (strcmp(sym_to_update->dataType, evaluated_value->dataType) != 0)
                 {
-                    // Error: Tipo de dato no coincide
-                    Error *new_error = (Error *)malloc(sizeof(Error));
-                    new_error->type = "Semantic";
+                    //! Error: Tipo de dato no coincide
                     char buffer[256];
                     snprintf(buffer, sizeof(buffer), "Tipo de dato no coincide en asignación: %s vs %s", sym_to_update->dataType, evaluated_assign->type);
-                    new_error->message = strdup(buffer);
-                    new_error->environment = strdup(context->nombre);
-                    new_error->line = instruction->line;
-                    new_error->column = instruction->column;
-                    insertError(errorList_C, new_error);
-                    return;
+                    return Error_exists(strdup(buffer), context->nombre, instruction);
                 }
 
                 if (strcmp(sym_to_update->type, "CONSTANT") == 0)
@@ -139,7 +129,7 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
                     new_error->message = "No se puede modificar una constante";
                     new_error->line = instruction->line;
                     new_error->column = instruction->column;
-                    insertError(errorList_C, new_error);
+                    insertError(list_errors, new_error);
                     return;
                 }
                 sym_to_update->value = evaluated_assign->value;
@@ -155,7 +145,7 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
         new_error->message = "ID no declarado";
         new_error->line = instruction->line;
         new_error->column = instruction->column;
-        insertError(errorList_C, new_error);
+        insertError(list_errors, new_error);
         return;
 
         break;
@@ -165,17 +155,7 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
         symbol *print_value = evaluate_expression(instruction->value, context);
 
         if (strcmp(print_value->dataType, "UNDEFINED") == 0)
-        {
-            // Error: Evaluación de expresión fallida
-            Error *new_error = (Error *)malloc(sizeof(Error));
-            new_error->type = "Semantic";
-            new_error->environment = context->nombre;
-            new_error->message = print_value->value;
-            new_error->line = instruction->line;
-            new_error->column = instruction->column;
-            insertError(errorList_C, new_error);
-            return;
-        }
+            return Error_exists(print_value->value, context->nombre, instruction);
 
         // Si es string, procesar secuencias de escape
         if (strcmp(print_value->dataType, "STRING") == 0)
@@ -200,16 +180,7 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
 
         symbol *if_condition_value = evaluate_expression(condition, context);
         if (strcmp(if_condition_value->dataType, "UNDEFINED") == 0)
-        {
-            Error *new_error = (Error *)malloc(sizeof(Error));
-            new_error->type = "Semantic";
-            new_error->environment = context->nombre;
-            new_error->message = if_condition_value->value;
-            new_error->line = instruction->line;
-            new_error->column = instruction->column;
-            insertError(errorList_C, new_error);
-            return;
-        }
+            return Error_exists(if_condition_value->value, context->nombre, instruction);
 
         bool condition_value = boolean_value(if_condition_value->value);
 
@@ -277,17 +248,7 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
         symbol *switch_value = evaluate_expression(switch_id_value, context);
 
         if (strcmp(switch_value->dataType, "UNDEFINED") == 0)
-        {
-            // Error: ID no declarado
-            Error *new_error = (Error *)malloc(sizeof(Error));
-            new_error->type = "Semantic";
-            new_error->environment = context->nombre;
-            new_error->message = "ID no declarado en switch";
-            new_error->line = instruction->line;
-            new_error->column = instruction->column;
-            insertError(errorList_C, new_error);
-            return;
-        }
+            return Error_exists("ID no declarado en switch", context->nombre, instruction);
 
         bool case_executed = false;
 
@@ -355,7 +316,7 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
             new_error->message = evaluated_while->value;
             new_error->line = instruction->line;
             new_error->column = instruction->column;
-            insertError(errorList_C, new_error);
+            insertError(list_errors, new_error);
             return;
         }
         bool condition_value = boolean_value(evaluated_while->value);
@@ -403,8 +364,6 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
         symbol *evaluated_for = evaluate_expression(condition, ctx_for);
         bool condition_value = boolean_value(evaluated_for->value);
 
-        fprintf(stderr, "Condición inicial del For: %d\n", condition_value);
-
         while (condition_value)
         {
             InstruccionNode *curr = for_block->head;
@@ -429,12 +388,8 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
             if (ctx_for->break_instruction)
                 break;
 
-            fprintf(stderr, "Ejecutando actualización del For...\n");
-            fprintf(stderr, "Antes de la actualización, condición: %s\n", update->value->value);
             semantic_analysis_execute(update, ctx_for);
-
             condition_value = boolean_value(evaluate_expression(condition, ctx_for)->value);
-            fprintf(stderr, "nuevo valor de condición: %d\n", condition_value);
         }
         Symbol_table_insertContext(SymbolTable_General, ctx_for->symbols_context);
         break;
@@ -456,17 +411,7 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
         }
 
         if (!found_loop)
-        {
-            // Error: BREAK fuera de un contexto de bucle o switch
-            Error *new_error = (Error *)malloc(sizeof(Error));
-            new_error->type = "Semantic";
-            new_error->environment = context->nombre;
-            new_error->message = "BREAK fuera de un contexto de bucle o switch";
-            new_error->line = instruction->line;
-            new_error->column = instruction->column;
-            insertError(errorList_C, new_error);
-            return;
-        }
+            return Error_exists("BREAK fuera de un contexto de bucle o switch", context->nombre, instruction);
 
         break;
     }
@@ -488,17 +433,7 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
         }
 
         if (!found_loop)
-        {
-            // Error: CONTINUE fuera de un contexto de bucle
-            Error *new_error = (Error *)malloc(sizeof(Error));
-            new_error->type = "Semantic";
-            new_error->environment = context->nombre;
-            new_error->message = "CONTINUE fuera de un contexto de bucle";
-            new_error->line = instruction->line;
-            new_error->column = instruction->column;
-            insertError(errorList_C, new_error);
-            return;
-        }
+            return Error_exists("CONTINUE fuera de un contexto de bucle", context->nombre, instruction);
 
         break;
     }

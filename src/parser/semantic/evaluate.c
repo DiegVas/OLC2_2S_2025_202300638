@@ -124,6 +124,60 @@ symbol *evaluate_expression(Expression *expr, Context *context)
         return perform_comparative_operation(exprIZQ, exprDER, context, "<=");
     case EXP_GREATER_EQUALS:
         return perform_comparative_operation(exprIZQ, exprDER, context, ">=");
+    case EXP_VECTOR_ACCESS:
+
+        symbol *index_access = evaluate_expression(expr->left, context);
+
+        if (strcmp(index_access->dataType, "INTEGER") != 0)
+        {
+            result->dataType = "UNDEFINED";
+            result->value = "Vector index must be of type INTEGER";
+            return result;
+        }
+
+        int index = atoi(index_access->value);
+
+        Context *ctx_search = context;
+        while (ctx_search)
+        {
+            if (SearchID(ctx_search->symbols_context, expr->value))
+            {
+                symbol *sym = SearchSymbol(ctx_search->symbols_context, expr->value);
+                fprintf(stderr, "DEBUG: Found symbol %s of type %s with value %s\n", sym->id, sym->dataType, sym->vectorValues);
+                if (strcmp(sym->type, "VECTOR") != 0 || !sym->vectorValues)
+                {
+                    result->dataType = "UNDEFINED";
+                    result->value = "Symbol is not a vector or has no values";
+                    return result;
+                }
+
+                VectorNode *curr = sym->vectorValues->head;
+                int curr_index = 0;
+                symbol *found_symbol = NULL;
+                while (curr)
+                {
+
+                    if (index == curr_index)
+                    {
+                        found_symbol = curr->value;
+                    }
+
+                    curr = curr->next;
+                    curr_index++;
+                }
+
+                if (!found_symbol)
+                {
+                    result->dataType = "UNDEFINED";
+                    result->value = "Vector index out of bounds";
+                    return result;
+                }
+
+                return found_symbol;
+            }
+
+            ctx_search = ctx_search->after;
+        }
 
     case EXP_ID:
     {
@@ -144,7 +198,7 @@ symbol *evaluate_expression(Expression *expr, Context *context)
             }
 
             ctx_search = ctx_search->after;
-         }
+        }
         fprintf(stderr, "DEBUG: Searching in context %s\n", ctx_search ? ctx_search->nombre : "NULL");
         result->dataType = "UNDEFINED";
         result->value = "Variable no definida";

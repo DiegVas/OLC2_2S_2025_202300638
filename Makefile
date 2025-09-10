@@ -30,6 +30,7 @@ PARSER_FILES = $(PARSER_DIR)/semantic.c \
                $(PARSER_DIR)/casting_operations.c \
                $(PARSER_DIR)/comparative_operations.c \
                $(PARSER_DIR)/ListEvaluate.c \
+               $(PARSER_DIR)/create_error.c
 
 # Archivos modulares de estructuras
 

@@ -24,6 +24,7 @@ int yyerror(const char *s);
     typedef struct CaseNodeList CaseNodeList;
     typedef struct List List;
     typedef struct ListData ListData;
+    typedef struct VectorList VectorList;
 }
 
 %locations
@@ -40,6 +41,7 @@ int yyerror(const char *s);
     SwitchData* switchdata;
     List* list;
     ListData* listdata;
+    VectorList* VList;
 }
 
 /* Tokens */
@@ -55,6 +57,7 @@ int yyerror(const char *s);
 %token IF ELSE SWITCH CASE BREAK DEFAULT CONTINUE
 %token WHILE FOR
 %token EQUALS_OP
+%token NEW
 
 /* Simboloes dobles o mas */
 
@@ -85,6 +88,7 @@ int yyerror(const char *s);
 %type<list> dimension_values_list dimension_expression
 %type<listdata> dimension_value
 %type optional_newlines
+%type <VList> vectorList
 
 
 // precedencia menor a mayor
@@ -325,7 +329,31 @@ declaration:
         instP->column = @3.first_column;
         instP->symbolType = "CONSTANT";
         instP->value = $5;
-        $$ = instP; };
+        $$ = instP; }
+    //* int[] id = {1,2,3}
+    | primitive_types '[' ']' ID '=' '{' vectorList '}' {
+        Instruccion* instP = (Instruccion*)malloc(sizeof(Instruccion));
+        instP->id = $4;
+        instP->type = $1;
+        instP->column = @3.first_column;
+        instP->symbolType = "VECTOR";
+        instP->vectorValues = $7;
+        $$ = instP; }
+    //* int[] id = new int[expr]
+    | primitive_types '[' ']' ID '=' NEW primitive_types '[' NUM ']' {
+        Instruccion* instP = (Instruccion*)malloc(sizeof(Instruccion));
+        instP->id = $4;
+        instP->type = $1;
+        instP->column = @3.first_column;
+        instP->symbolType = "VECTOR";
+        instP->vectorValues = (VectorList*)calloc(1, sizeof(VectorList));
+        for (int i = 0; i < atoi($9); i++) {
+            Expression* exp = (Expression*)calloc(1, sizeof(Expression));
+            exp->type = $7;
+            exp->value = strdup("UNDEFINED");
+            VectorList_addExp(instP->vectorValues, exp);
+        }
+        $$ = instP; }
     //* int ID[] = expression
     | primitive_types ID dimensions '=' dimension_expression {
         Instruccion* instP = (Instruccion*)malloc(sizeof(Instruccion));
@@ -564,8 +592,14 @@ expression:
         exp->type = "LOGICAL_NOT";
         exp->value = strdup("!");
         exp->left = $2;
+        $$ = exp; }
+    //* id[]
+    | ID '[' expression ']' {
+        Expression* exp = (Expression*)calloc(1, sizeof(Expression));
+        exp->type = "VECTOR_ACCESS";
+        exp->value = $1;
+        exp->left = $3;
         $$ = exp; };
-
 
 //* CONDICIONALES
 
@@ -671,6 +705,20 @@ dimensions
     : /* empty */ { $$ = 0; }
     | dimensions '[' ']' { $$ = $1 + 1; };
 
+vectorList
+    : /* empty */ { 
+        VectorList* vecList = VectorList_create();
+        $$ = vecList;
+    }
+    | expression {
+        VectorList* vecList = VectorList_create();
+        VectorList_addExp(vecList, $1);
+        $$ = vecList;
+     }
+    | vectorList ',' expression {
+        VectorList_addExp($1, $3);
+        $$ = $1;
+     }
 dimension_expression: 
     '{' optional_newlines dimension_values_list optional_newlines '}' {$$ = $3; };
 

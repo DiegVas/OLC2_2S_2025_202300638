@@ -66,6 +66,7 @@ typedef enum ExpressionType
     EXP_GREATER,
     EXP_LESS_EQUALS,
     EXP_GREATER_EQUALS,
+    EXP_VECTOR_ACCESS,
     EXP_UNKNOWN
 } ExpressionType;
 
@@ -87,3 +88,6 @@ OperativeType get_operativeType(const char *type_str);
 ExpressionType
 get_expression_type(const char *type_str);
 List *evaluate_list(List *list, Context *evaluateContext);
+VectorList *evaluate_vector(char *dataType, VectorList *vec, Context *evaluateContext);
+char *printVector(VectorList *vec);
+void Error_exists(char *message, char *environment, Instruccion *instruccion);

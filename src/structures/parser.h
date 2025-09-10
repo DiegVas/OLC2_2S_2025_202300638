@@ -9,6 +9,7 @@ typedef struct ListData ListData;
 typedef struct ListNode ListNode;
 typedef struct List List;
 typedef struct SymbolList SymbolList;
+typedef struct VectorList VectorList;
 
 //* Tabla de simbolos
 
@@ -23,8 +24,9 @@ typedef struct symbol
     char *environment;
     char *value;
     char *id;
-    List *arrayValues; // Para arreglos
-    int dimensions;    // Numero de dimensiones del arreglo
+    List *arrayValues;        // Para muldimensionales
+    VectorList *vectorValues; // Para vectores
+    int dimensions;           // Numero de dimensiones del arreglo
 
     int *line;
     int *column;
@@ -48,7 +50,6 @@ typedef struct Context
     char *nombre;
     struct Context *after;
     struct symbol_table *symbols_context;
-    struct ErrorList *errors;
     bool continue_instruction;
     bool break_instruction;
     char *return_type;
@@ -113,7 +114,8 @@ typedef struct Instruccion
     SwitchData *switchData;
     WhileData *whileData;
     ForData *forData;
-    SymbolList *arrayValues; // Para arreglos
+    SymbolList *arrayValues;  // Para arreglos
+    VectorList *vectorValues; // Para vectores
     int line;
     int column;
     Expression *value;
@@ -209,6 +211,18 @@ struct SymbolList
     List *values;
 };
 
+typedef struct VectorNode
+{
+    struct VectorNode *next;
+    symbol *value;
+    Expression *exprData;
+} VectorNode;
+
+struct VectorList
+{
+    VectorNode *head;
+};
+
 // * --- Estructura ASTNode y lista de hijos ---
 
 typedef struct ASTNode ASTNode;
@@ -257,5 +271,9 @@ void CaseNodeList_add(CaseNodeList *list, CaseData *caseData);
 List *List_create();
 void List_add(List *list, ListData *listData);
 void List_destroy(List *list);
+
+VectorList *VectorList_create();
+void VectorList_addExp(VectorList *list, Expression *exprData);
+void VectorList_addSym(VectorList *list, symbol *sym);
 
 #endif // PARSER_H
