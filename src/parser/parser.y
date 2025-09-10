@@ -209,6 +209,13 @@ assignment:
         instP->value = $3;
         instP->column = @1.first_column;
         $$ = instP; }
+    | ID '[' expression ']' '=' expression {
+        Instruccion* instP = (Instruccion*)malloc(sizeof(Instruccion));
+        instP->id = $1;
+        instP->IndexVector = $3;
+        instP->value = $6;
+        instP->column = @1.first_column;
+        $$ = instP; }
     //* ID += expression
     | assignment_expression PLUS_ASSIGN expression {
         $1->value->type = "SUM";
@@ -289,7 +296,20 @@ assignment_expression:
         instP->value->left->type = "ID";
         instP->value->left->value = strdup($1);
         $$ = instP;
+        }
+    | ID '[' expression ']' {
+        Instruccion* instP = (Instruccion*)malloc(sizeof(Instruccion));
+        instP->id = $1;
+        instP->IndexVector = $3;
+        instP->column = @1.first_column;
+
+        instP->value = (Expression*)calloc(1, sizeof(Expression));
+        instP->value->left->type = "VECTOR";
+        instP->value->left->value = strdup($1);
+        instP->value->left->left = $3;
+        $$ = instP;
         };
+
 
 
 //* Declaracion de variables y constantes

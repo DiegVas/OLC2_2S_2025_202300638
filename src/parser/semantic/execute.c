@@ -111,6 +111,36 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
             if (SearchID(ctx->symbols_context, instruction->id))
             {
                 symbol *sym_to_update = SearchSymbol(ctx->symbols_context, instruction->id);
+                fprintf(stderr, "Símbolo encontrado para asignación: %s, Tipo: %s, Valor actual: %s y del tipo %s\n",
+                        sym_to_update->id, sym_to_update->dataType, sym_to_update->value, sym_to_update->type);
+
+                if (strcmp(sym_to_update->type, "VECTOR") == 0 && instruction->IndexVector)
+                {
+                    fprintf(stderr, "Asignación a elemento de vector detectada para ID: %s\n", instruction->id);
+
+                    // Obtener puntero directo al elemento del vector
+                    symbol **vector_element_ptr = get_VectorElementPointer(ctx, instruction->IndexVector, instruction->id);
+
+                    if (!vector_element_ptr)
+                        return Error_exists("Vector index must be INTEGER or out of bounds", ctx->nombre, instruction);
+
+                    symbol *vector_element = *vector_element_ptr;
+                    fprintf(stderr, "Elemento de vector antes de la asignación: Tipo=%s, Valor=%s\n",
+                            vector_element->dataType, vector_element->value);
+                    fprintf(stderr, "Valor a asignar: Tipo=%s, Valor=%s\n",
+                            evaluated_assign->dataType, evaluated_assign->value);
+
+                    // Modificar directamente el valor en el vector
+                    vector_element->value = evaluated_assign->value;
+                    fprintf(stderr, "Elemento de vector después de la asignación: Tipo=%s, Valor=%s\n",
+                            vector_element->dataType, vector_element->value);
+
+                    // Actualizar la representación string del vector completo
+                    sym_to_update->value = printVector(sym_to_update->vectorValues);
+                    fprintf(stderr, "Vector completo actualizado: %s\n", sym_to_update->value);
+                    return;
+                }
+
                 symbol *evaluated_value = apply_casting_auto(evaluated_assign, sym_to_update->dataType);
                 if (strcmp(sym_to_update->dataType, evaluated_value->dataType) != 0)
                 {
@@ -139,14 +169,7 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
         }
 
         // Error: ID no declarado
-        Error *new_error = (Error *)malloc(sizeof(Error));
-        new_error->type = "Semantic";
-        new_error->environment = context->nombre;
-        new_error->message = "ID no declarado";
-        new_error->line = instruction->line;
-        new_error->column = instruction->column;
-        insertError(list_errors, new_error);
-        return;
+        return Error_exists("ID no declarado", context->nombre, instruction);
 
         break;
     }

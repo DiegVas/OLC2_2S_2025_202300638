@@ -143,7 +143,6 @@ symbol *evaluate_expression(Expression *expr, Context *context)
             if (SearchID(ctx_search->symbols_context, expr->value))
             {
                 symbol *sym = SearchSymbol(ctx_search->symbols_context, expr->value);
-                fprintf(stderr, "DEBUG: Found symbol %s of type %s with value %s\n", sym->id, sym->dataType, sym->vectorValues);
                 if (strcmp(sym->type, "VECTOR") != 0 || !sym->vectorValues)
                 {
                     result->dataType = "UNDEFINED";

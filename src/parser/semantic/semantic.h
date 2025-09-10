@@ -91,3 +91,4 @@ List *evaluate_list(List *list, Context *evaluateContext);
 VectorList *evaluate_vector(char *dataType, VectorList *vec, Context *evaluateContext);
 char *printVector(VectorList *vec);
 void Error_exists(char *message, char *environment, Instruccion *instruccion);
+symbol **get_VectorElementPointer(Context *context, Expression *index_exp, char *id);

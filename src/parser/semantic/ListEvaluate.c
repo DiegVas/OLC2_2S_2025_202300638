@@ -48,6 +48,100 @@ VectorList *evaluate_vector(char *dataType, VectorList *vec, Context *evaluateCo
     return evaluated_vector;
 }
 
+symbol **get_VectorElementPointer(Context *context, Expression *index_exp, char *id)
+{
+    symbol *index_access = evaluate_expression(index_exp, context);
+
+    if (strcmp(index_access->dataType, "INTEGER") != 0)
+        return NULL;
+
+    int index = atoi(index_access->value);
+
+    Context *ctx_search = context;
+    while (ctx_search)
+    {
+        if (SearchID(ctx_search->symbols_context, id))
+        {
+            symbol *sym = SearchSymbol(ctx_search->symbols_context, id);
+            if (strcmp(sym->type, "VECTOR") != 0 || !sym->vectorValues)
+                return NULL;
+
+            VectorNode *curr = sym->vectorValues->head;
+            int curr_index = 0;
+            while (curr)
+            {
+                if (index == curr_index)
+                {
+                    return &(curr->value); // Devolver puntero al puntero del símbolo
+                }
+                curr = curr->next;
+                curr_index++;
+            }
+            return NULL; // Index out of bounds
+        }
+        ctx_search = ctx_search->after;
+    }
+    return NULL;
+}
+
+symbol *get_VectorElement(Context *context, Expression *index_exp, char *id)
+{
+    symbol *index_access = evaluate_expression(index_exp, context);
+
+    symbol *result = (symbol *)calloc(1, sizeof(symbol));
+
+    if (strcmp(index_access->dataType, "INTEGER") != 0)
+    {
+        result->dataType = "UNDEFINED";
+        result->value = "Vector index must be of type INTEGER";
+        return result;
+    }
+
+    int index = atoi(index_access->value);
+
+    Context *ctx_search = context;
+    while (ctx_search)
+    {
+        if (SearchID(ctx_search->symbols_context, id))
+        {
+            symbol *sym = SearchSymbol(ctx_search->symbols_context, id);
+            if (strcmp(sym->type, "VECTOR") != 0 || !sym->vectorValues)
+            {
+                result->dataType = "UNDEFINED";
+                result->value = "Symbol is not a vector or has no values";
+                return result;
+            }
+
+            VectorNode *curr = sym->vectorValues->head;
+            int curr_index = 0;
+            symbol *found_symbol = NULL;
+            while (curr)
+            {
+
+                if (index == curr_index)
+                {
+                    found_symbol = curr->value;
+                }
+
+                curr = curr->next;
+                curr_index++;
+            }
+
+            if (!found_symbol)
+            {
+                result->dataType = "UNDEFINED";
+                result->value = "Vector index out of bounds";
+                return result;
+            }
+            fprintf(stderr, "Accessed vector element: ID=%s, Index=%d, Type=%s, Value=%s\n",
+                    id, index, found_symbol->dataType, found_symbol->value);
+            return found_symbol;
+        }
+
+        ctx_search = ctx_search->after;
+    }
+}
+
 char *printVector(VectorList *vec)
 {
     char *result = (char *)calloc(1024, sizeof(char));

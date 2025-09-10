@@ -116,6 +116,7 @@ typedef struct Instruccion
     ForData *forData;
     SymbolList *arrayValues;  // Para arreglos
     VectorList *vectorValues; // Para vectores
+    Expression *IndexVector;  // Para acceso a vectores
     int line;
     int column;
     Expression *value;
