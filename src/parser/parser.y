@@ -25,6 +25,7 @@ int yyerror(const char *s);
     typedef struct List List;
     typedef struct ListData ListData;
     typedef struct VectorList VectorList;
+    typedef struct MatrixList MatrixList;
 }
 
 %locations
@@ -42,6 +43,7 @@ int yyerror(const char *s);
     List* list;
     ListData* listdata;
     VectorList* VList;
+    MatrixList* MList;
 }
 
 /* Tokens */
@@ -89,6 +91,7 @@ int yyerror(const char *s);
 %type<listdata> dimension_value
 %type optional_newlines
 %type <VList> vectorList
+%type <MList> matrixList
 
 
 // precedencia menor a mayor
@@ -209,11 +212,21 @@ assignment:
         instP->value = $3;
         instP->column = @1.first_column;
         $$ = instP; }
+    //* ID[expression] = expression
     | ID '[' expression ']' '=' expression {
         Instruccion* instP = (Instruccion*)malloc(sizeof(Instruccion));
         instP->id = $1;
         instP->IndexVector = $3;
         instP->value = $6;
+        instP->column = @1.first_column;
+        $$ = instP; }
+    //* ID[expression][expression] = expression
+    | ID '[' expression ']' '[' expression ']' '=' expression {
+        Instruccion* instP = (Instruccion*)malloc(sizeof(Instruccion));
+        instP->id = $1;
+        instP->IndexVector = $6;
+        instP->IndexMatrix = $3;
+        instP->value = $9;
         instP->column = @1.first_column;
         $$ = instP; }
     //* ID += expression
@@ -298,15 +311,21 @@ assignment_expression:
         $$ = instP;
         }
     | ID '[' expression ']' {
+        
         Instruccion* instP = (Instruccion*)malloc(sizeof(Instruccion));
         instP->id = $1;
         instP->IndexVector = $3;
         instP->column = @1.first_column;
 
+        
         instP->value = (Expression*)calloc(1, sizeof(Expression));
-        instP->value->left->type = "VECTOR";
+        instP->value->left = (Expression*)calloc(1, sizeof(Expression));
+        instP->value->left->type = "VECTOR_ACCESS";
         instP->value->left->value = strdup($1);
         instP->value->left->left = $3;
+
+    
+
         $$ = instP;
         };
 
@@ -373,6 +392,35 @@ declaration:
             exp->value = strdup("UNDEFINED");
             VectorList_addExp(instP->vectorValues, exp);
         }
+        $$ = instP; }
+    | //* int[][] id = {{},{}}
+    primitive_types '[' ']' '[' ']' ID '=' '{' optional_newlines matrixList '}'{
+        Instruccion* instP = (Instruccion*)malloc(sizeof(Instruccion));
+        instP->id = $6;
+        instP->type = $1;
+        instP->column = @5.first_column;
+        instP->symbolType = "MATRIX";
+        instP->matrixValues = $10;
+        $$ = instP;
+    }
+    | //* int[][] id = new int[expr][expr]
+    primitive_types '[' ']' '[' ']' ID '=' NEW primitive_types '[' NUM ']' '[' NUM ']' {
+        Instruccion* instP = (Instruccion*)malloc(sizeof(Instruccion));
+        instP->id = $6;
+        instP->type = $1;
+        instP->column = @5.first_column;
+        instP->symbolType = "MATRIX";
+        instP->matrixValues = (MatrixList*)calloc(1, sizeof(MatrixList));
+        for (int i = 0; i < atoi($11); i++) {
+            VectorList* vecList = (VectorList*)calloc(1, sizeof(VectorList));
+            for (int j = 0; j < atoi($14); j++) {
+                Expression* exp = (Expression*)calloc(1, sizeof(Expression));
+                exp->type = $9;
+                exp->value = strdup("UNDEFINED");
+                VectorList_addExp(vecList, exp);
+            }
+            MatrixList_add(instP->matrixValues, vecList);
+            }
         $$ = instP; }
     //* int ID[] = expression
     | primitive_types ID dimensions '=' dimension_expression {
@@ -619,7 +667,16 @@ expression:
         exp->type = "VECTOR_ACCESS";
         exp->value = $1;
         exp->left = $3;
-        $$ = exp; };
+        $$ = exp; }
+    //* id[][]
+    | ID '[' expression ']' '[' expression ']' {
+        Expression* exp = (Expression*)calloc(1, sizeof(Expression));
+        exp->type = "MATRIX_ACCESS";
+        exp->value = $1;
+        exp->left = $3;
+        exp->right = $6;
+        $$ = exp;
+    };
 
 //* CONDICIONALES
 
@@ -721,10 +778,13 @@ FOR_STATEMENT:
     };
 //* Manejo de Arreglos
 
+
+
 dimensions
     : /* empty */ { $$ = 0; }
     | dimensions '[' ']' { $$ = $1 + 1; };
 
+//? Vectores
 vectorList
     : /* empty */ { 
         VectorList* vecList = VectorList_create();
@@ -739,6 +799,24 @@ vectorList
         VectorList_addExp($1, $3);
         $$ = $1;
      }
+
+
+//? Matrices
+matrixList
+    : /* empty */ { 
+        MatrixList* matList = MatrixList_create();
+        $$ = matList;
+    }
+    | '{'vectorList '}' optional_newlines {
+        MatrixList* matList = MatrixList_create();
+        MatrixList_add(matList, $2);
+        $$ = matList;
+     }
+    |  matrixList ',' optional_newlines '{' vectorList '}'  optional_newlines{
+        MatrixList_add($1, $5);
+        $$ = $1;
+     }
+
 dimension_expression: 
     '{' optional_newlines dimension_values_list optional_newlines '}' {$$ = $3; };
 

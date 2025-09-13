@@ -9,6 +9,7 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
 
     // * Tabla de simbolos del contexto
     symbol_table *symbolTable_C = context->symbols_context;
+    fprintf(stderr, "Ejecutando instrucción de tipo: ");
 
     // ! Tabla de errores del contexto
     extern ErrorList *list_errors;
@@ -57,6 +58,38 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
             return;
         }
 
+        if (strcmp(instruction->symbolType, "MATRIX") == 0)
+        {
+            matrixNode *curr = instruction->matrixValues->head;
+            char *matrix_str = (char *)calloc(2048, sizeof(char)); // Ajusta el tamaño según lo que necesites
+            strcat(matrix_str, "{");
+            while (curr)
+            {
+                curr->vector = evaluate_vector(instruction->type, curr->vector, context);
+                char *vec_str = printVector(curr->vector);
+
+                strcat(matrix_str, vec_str);
+                curr = curr->next;
+            }
+            strcat(matrix_str, "}");
+            symbol *new_symbol = (symbol *)calloc(1, sizeof(symbol));
+            new_symbol->value = strdup(matrix_str);
+            new_symbol->dataType = instruction->type;
+            new_symbol->type = instruction->symbolType;
+            new_symbol->id = instruction->id;
+            new_symbol->matrixValues = instruction->matrixValues;
+            new_symbol->environment = context->nombre;
+            new_symbol->line = &(instruction->line);
+            new_symbol->column = &(instruction->column);
+
+            fprintf(stderr, "Nuevo símbolo de tipo matriz: %s, Tipo: %s, Valor: %s\n",
+                    instruction->id, instruction->type, matrix_str);
+
+            Symbol_table_insert(symbolTable_C, new_symbol);
+            free(matrix_str);
+            return;
+        }
+
         symbol *evaluated_value = evaluate_expression(instruction->value, context);
 
         evaluated_value = apply_casting_auto(evaluated_value, instruction->type);
@@ -99,11 +132,12 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
     }
     case ASSIGNMENT:
     {
+        fprintf(stderr, "Instrucción de asignación detectada para ID: %s\n", instruction->id);
 
         symbol *evaluated_assign = evaluate_expression(instruction->value, context);
         if (strcmp(evaluated_assign->dataType, "UNDEFINED") == 0)
             //! Error: Evaluación de expresión fallida
-            return Error_exists("Evaluación de expresión fallida", context->nombre, instruction);
+            return Error_exists(evaluated_assign->value, context->nombre, instruction);
 
         Context *ctx = context;
         while (ctx)
@@ -119,21 +153,15 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
                     fprintf(stderr, "Asignación a elemento de vector detectada para ID: %s\n", instruction->id);
 
                     // Obtener puntero directo al elemento del vector
-                    symbol **vector_element_ptr = get_VectorElementPointer(ctx, instruction->IndexVector, instruction->id);
+                    symbol **vector_element_ptr = get_VectorElementPointer(ctx, instruction->IndexVector, sym_to_update->vectorValues);
 
                     if (!vector_element_ptr)
                         return Error_exists("Vector index must be INTEGER or out of bounds", ctx->nombre, instruction);
 
                     symbol *vector_element = *vector_element_ptr;
-                    fprintf(stderr, "Elemento de vector antes de la asignación: Tipo=%s, Valor=%s\n",
-                            vector_element->dataType, vector_element->value);
-                    fprintf(stderr, "Valor a asignar: Tipo=%s, Valor=%s\n",
-                            evaluated_assign->dataType, evaluated_assign->value);
 
                     // Modificar directamente el valor en el vector
                     vector_element->value = evaluated_assign->value;
-                    fprintf(stderr, "Elemento de vector después de la asignación: Tipo=%s, Valor=%s\n",
-                            vector_element->dataType, vector_element->value);
 
                     // Actualizar la representación string del vector completo
                     sym_to_update->value = printVector(sym_to_update->vectorValues);
@@ -141,6 +169,34 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
                     return;
                 }
 
+                if (strcmp(sym_to_update->type, "MATRIX") == 0 && instruction->IndexMatrix)
+                {
+                    fprintf(stderr, "Asignación a elemento de matriz detectada para ID: %s\n", instruction->id);
+                    symbol **matrix_element_ptr = get_MatrixElementPointer(ctx, instruction->IndexMatrix, instruction->IndexVector, sym_to_update->matrixValues);
+
+                    if (!matrix_element_ptr)
+                        return Error_exists("Matrix index must be INTEGER or out of bounds", ctx->nombre, instruction);
+                    symbol *matrix_element = *matrix_element_ptr;
+
+                    // Modificar directamente el valor en la matriz
+                    matrix_element->value = evaluated_assign->value;
+
+                    // Actualizar la representación string de la matriz completa
+
+                    char *matrix_str = (char *)calloc(2048, sizeof(char)); // Ajusta el tamaño según lo que necesites
+                    strcat(matrix_str, "{");
+                    matrixNode *curr = sym_to_update->matrixValues ? sym_to_update->matrixValues->head : NULL;
+                    while (curr)
+                    {
+                        char *vec_str = printVector(curr->vector);
+                        strcat(matrix_str, vec_str);
+                        curr = curr->next;
+                    }
+                    strcat(matrix_str, "}");
+                    sym_to_update->value = matrix_str;
+                    fprintf(stderr, "Matriz completa actualizada: %s\n", sym_to_update->value);
+                    return;
+                }
                 symbol *evaluated_value = apply_casting_auto(evaluated_assign, sym_to_update->dataType);
                 if (strcmp(sym_to_update->dataType, evaluated_value->dataType) != 0)
                 {
@@ -329,7 +385,7 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
         ctx_while->after = context;
         ctx_while->symbols_context = Symbol_table_create();
         ctx_while->nombre = "While";
-        fprintf(stderr, "Ejecutando While...\n");
+
         symbol *evaluated_while = evaluate_expression(condition, ctx_while);
         if (strcmp(evaluated_while->dataType, "UNDEFINED") == 0)
         {

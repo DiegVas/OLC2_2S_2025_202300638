@@ -179,6 +179,20 @@ BREAK_LINE \n
 
 "new" return NEW;
 
+"Integer" return INTEGER_OBJ;
+
+"parseInt" return PARSEINT;
+
+"Double" return DOUBLE_OBJ;
+
+"parseDouble" return PARSEDOUBLE;
+
+"Float" return FLOAT_OBJ;
+
+"parseFloat" return PARSEFLOAT;
+
+
+
 "true" {
     yylval.sval = strdup(yytext);
     return BOOLEAN;

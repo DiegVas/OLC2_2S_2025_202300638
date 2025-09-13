@@ -108,5 +108,7 @@ get_expression_type(const char *type_str)
         return EXP_GREATER_EQUALS;
     if (strcmp(type_str, "VECTOR_ACCESS") == 0)
         return EXP_VECTOR_ACCESS;
+    if (strcmp(type_str, "MATRIX_ACCESS") == 0)
+        return EXP_MATRIX_ACCESS;
     return EXP_UNKNOWN;
 }

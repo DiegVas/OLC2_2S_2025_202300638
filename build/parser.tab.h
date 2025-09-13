@@ -57,8 +57,9 @@ extern int yydebug;
     typedef struct List List;
     typedef struct ListData ListData;
     typedef struct VectorList VectorList;
+    typedef struct MatrixList MatrixList;
 
-#line 62 "build/parser.tab.h"
+#line 63 "build/parser.tab.h"
 
 /* Token kinds.  */
 #ifndef YYTOKENTYPE
@@ -125,7 +126,7 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 32 "src/parser/parser.y"
+#line 33 "src/parser/parser.y"
 
     char* sval;
     int ival;
@@ -139,8 +140,9 @@ union YYSTYPE
     List* list;
     ListData* listdata;
     VectorList* VList;
+    MatrixList* MList;
 
-#line 144 "build/parser.tab.h"
+#line 146 "build/parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

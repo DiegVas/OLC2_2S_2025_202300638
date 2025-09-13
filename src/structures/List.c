@@ -51,6 +51,36 @@ void VectorList_addSym(VectorList *list, symbol *sym)
     }
 }
 
+//* Para matrices
+
+void MatrixList_add(MatrixList *matrix, VectorList *vectorList)
+{
+    matrixNode *newNode = (matrixNode *)malloc(sizeof(matrixNode));
+    newNode->vector = vectorList;
+    newNode->next = NULL;
+
+    if (matrix->head == NULL)
+    {
+        matrix->head = newNode;
+    }
+    else
+    {
+        matrixNode *current = matrix->head;
+        while (current->next != NULL)
+        {
+            current = current->next;
+        }
+        current->next = newNode;
+    }
+}
+
+MatrixList *MatrixList_create()
+{
+    MatrixList *list = (MatrixList *)malloc(sizeof(MatrixList));
+    list->head = NULL;
+    return list;
+}
+
 List *
 List_create()
 {

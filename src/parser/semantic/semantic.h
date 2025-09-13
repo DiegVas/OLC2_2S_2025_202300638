@@ -67,6 +67,7 @@ typedef enum ExpressionType
     EXP_LESS_EQUALS,
     EXP_GREATER_EQUALS,
     EXP_VECTOR_ACCESS,
+    EXP_MATRIX_ACCESS,
     EXP_UNKNOWN
 } ExpressionType;
 
@@ -90,5 +91,8 @@ get_expression_type(const char *type_str);
 List *evaluate_list(List *list, Context *evaluateContext);
 VectorList *evaluate_vector(char *dataType, VectorList *vec, Context *evaluateContext);
 char *printVector(VectorList *vec);
+
 void Error_exists(char *message, char *environment, Instruccion *instruccion);
-symbol **get_VectorElementPointer(Context *context, Expression *index_exp, char *id);
+
+symbol **get_VectorElementPointer(Context *context, Expression *index_exp, VectorList *vector);
+symbol **get_MatrixElementPointer(Context *context, Expression *row_exp, Expression *col_exp, MatrixList *matrix);

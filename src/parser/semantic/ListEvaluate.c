@@ -48,7 +48,7 @@ VectorList *evaluate_vector(char *dataType, VectorList *vec, Context *evaluateCo
     return evaluated_vector;
 }
 
-symbol **get_VectorElementPointer(Context *context, Expression *index_exp, char *id)
+symbol **get_VectorElementPointer(Context *context, Expression *index_exp, VectorList *vector)
 {
     symbol *index_access = evaluate_expression(index_exp, context);
 
@@ -57,29 +57,46 @@ symbol **get_VectorElementPointer(Context *context, Expression *index_exp, char 
 
     int index = atoi(index_access->value);
 
-    Context *ctx_search = context;
-    while (ctx_search)
+    VectorNode *curr = vector->head;
+    int curr_index = 0;
+    while (curr)
     {
-        if (SearchID(ctx_search->symbols_context, id))
+        if (index == curr_index)
         {
-            symbol *sym = SearchSymbol(ctx_search->symbols_context, id);
-            if (strcmp(sym->type, "VECTOR") != 0 || !sym->vectorValues)
+            return &(curr->value);
+        }
+        curr = curr->next;
+        curr_index++;
+    }
+    return NULL;
+}
+
+symbol **get_MatrixElementPointer(Context *context, Expression *row_exp, Expression *col_exp, MatrixList *matrix)
+{
+    symbol *row_access = evaluate_expression(row_exp, context);
+    symbol *col_access = evaluate_expression(col_exp, context);
+
+    if (strcmp(row_access->dataType, "INTEGER") != 0 || strcmp(col_access->dataType, "INTEGER") != 0)
+        return NULL;
+
+    int row = atoi(row_access->value);
+    matrixNode *curr_row = matrix->head;
+
+    int curr_row_index = 0;
+    while (curr_row)
+    {
+        if (row == curr_row_index)
+        {
+
+            symbol **curr_col = get_VectorElementPointer(context, col_exp, curr_row->vector);
+
+            if (!curr_col)
                 return NULL;
 
-            VectorNode *curr = sym->vectorValues->head;
-            int curr_index = 0;
-            while (curr)
-            {
-                if (index == curr_index)
-                {
-                    return &(curr->value); // Devolver puntero al puntero del símbolo
-                }
-                curr = curr->next;
-                curr_index++;
-            }
-            return NULL; // Index out of bounds
+            return curr_col;
         }
-        ctx_search = ctx_search->after;
+        curr_row = curr_row->next;
+        curr_row_index++;
     }
     return NULL;
 }

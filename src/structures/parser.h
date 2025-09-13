@@ -10,6 +10,7 @@ typedef struct ListNode ListNode;
 typedef struct List List;
 typedef struct SymbolList SymbolList;
 typedef struct VectorList VectorList;
+typedef struct MatrixList MatrixList;
 
 //* Tabla de simbolos
 
@@ -26,6 +27,7 @@ typedef struct symbol
     char *id;
     List *arrayValues;        // Para muldimensionales
     VectorList *vectorValues; // Para vectores
+    MatrixList *matrixValues; // Para matrices
     int dimensions;           // Numero de dimensiones del arreglo
 
     int *line;
@@ -116,7 +118,9 @@ typedef struct Instruccion
     ForData *forData;
     SymbolList *arrayValues;  // Para arreglos
     VectorList *vectorValues; // Para vectores
+    MatrixList *matrixValues; // Para matrices
     Expression *IndexVector;  // Para acceso a vectores
+    Expression *IndexMatrix;  // Para acceso a matrices
     int line;
     int column;
     Expression *value;
@@ -224,6 +228,17 @@ struct VectorList
     VectorNode *head;
 };
 
+typedef struct matrixNode
+{
+    struct matrixNode *next;
+    VectorList *vector;
+} matrixNode;
+
+struct MatrixList
+{
+    matrixNode *head;
+};
+
 // * --- Estructura ASTNode y lista de hijos ---
 
 typedef struct ASTNode ASTNode;
@@ -276,5 +291,8 @@ void List_destroy(List *list);
 VectorList *VectorList_create();
 void VectorList_addExp(VectorList *list, Expression *exprData);
 void VectorList_addSym(VectorList *list, symbol *sym);
+
+MatrixList *MatrixList_create();
+void MatrixList_add(MatrixList *matrix, VectorList *vectorList);
 
 #endif // PARSER_H
