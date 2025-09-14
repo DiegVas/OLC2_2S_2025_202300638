@@ -68,6 +68,14 @@ typedef enum ExpressionType
     EXP_GREATER_EQUALS,
     EXP_VECTOR_ACCESS,
     EXP_MATRIX_ACCESS,
+    EXP_PARSEINT,
+    EXP_PARSEDOUBLE,
+    EXP_PARSEFLOAT,
+    EXP_VALUEOF,
+    EXP_JOIN,
+    EXP_INDEXOF,
+    EXP_LENGTH,
+    EXP_ADD,
     EXP_UNKNOWN
 } ExpressionType;
 
@@ -96,3 +104,5 @@ void Error_exists(char *message, char *environment, Instruccion *instruccion);
 
 symbol **get_VectorElementPointer(Context *context, Expression *index_exp, VectorList *vector);
 symbol **get_MatrixElementPointer(Context *context, Expression *row_exp, Expression *col_exp, MatrixList *matrix);
+
+symbol *get_legth_of_vector(VectorList *vector);

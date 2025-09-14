@@ -216,3 +216,19 @@ char *process_escape_sequences(const char *input)
     result[j] = '\0';
     return result;
 }
+
+symbol *get_legth_of_vector(VectorList *vector)
+{
+    symbol *result = calloc(1, sizeof(symbol));
+    result->dataType = "INTEGER";
+    int count = 0;
+    VectorNode *current = vector->head;
+    while (current)
+    {
+        count++;
+        current = current->next;
+    }
+    result->value = (char *)calloc(20, sizeof(char));
+    sprintf(result->value, "%d", count);
+    return result;
+}

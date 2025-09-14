@@ -83,6 +83,8 @@ typedef struct ErrorList
 
 // * Manejo de Tokens
 
+typedef struct ExpressionList ExpressionList;
+
 typedef struct Expression
 {
     char *type;
@@ -91,7 +93,19 @@ typedef struct Expression
     int column;
     struct Expression *left;
     struct Expression *right;
+    struct ExpressionList *list;
 } Expression;
+
+typedef struct ExpressionNode
+{
+    Expression *expr;
+    struct ExpressionNode *next;
+} ExpressionNode;
+
+struct ExpressionList
+{
+    ExpressionNode *head;
+};
 
 // Forward declarations
 typedef struct InstruccionList InstruccionList;
@@ -276,6 +290,13 @@ void Symbol_table_insert(symbol_table *table, symbol *sym);
 void Symbol_table_insertContext(symbol_table *global_table, symbol_table *new_context);
 bool SearchID(symbol_table *table, char *id);
 symbol *SearchSymbol(symbol_table *table, char *id);
+symbol *copy_symbol(symbol *original);
+VectorList *copy_VectorList(VectorList *original);
+MatrixList *copy_MatrixList(MatrixList *original);
+List *copy_List(List *original);
+
+ExpressionList *create_expression_list();
+void ExpressionList_add(ExpressionList *list, Expression *expr);
 
 IfNodeList *createIfNodeList();
 void insertIfNode(IfNodeList *list, IfData *IfData);

@@ -124,18 +124,170 @@ symbol *evaluate_expression(Expression *expr, Context *context)
         return perform_comparative_operation(exprIZQ, exprDER, context, "<=");
     case EXP_GREATER_EQUALS:
         return perform_comparative_operation(exprIZQ, exprDER, context, ">=");
-    case EXP_VECTOR_ACCESS:
+    case EXP_PARSEINT:
     {
-        symbol *index_access = evaluate_expression(expr->left, context);
-
-        if (strcmp(index_access->dataType, "INTEGER") != 0)
+        symbol *to_parse = evaluate_expression(expr->left, context);
+        if (strcmp(to_parse->dataType, "STRING") != 0)
         {
             result->dataType = "UNDEFINED";
-            result->value = "Vector index must be of type INTEGER";
+            result->value = "PARSEINT operation requires a STRING type";
             return result;
         }
 
-        int index = atoi(index_access->value);
+        char *endptr;
+        long parsed_value = strtol(to_parse->value, &endptr, 10);
+
+        if (*endptr != '\0')
+        {
+            result->dataType = "UNDEFINED";
+            result->value = "PARSEINT operation failed: invalid integer format";
+            return result;
+        }
+
+        result->dataType = "INTEGER";
+        result->value = (char *)calloc(20, sizeof(char));
+        sprintf(result->value, "%ld", parsed_value);
+        return result;
+
+        break;
+    }
+    case EXP_PARSEDOUBLE:
+    {
+        symbol *to_parse = evaluate_expression(expr->left, context);
+        if (strcmp(to_parse->dataType, "STRING") != 0)
+        {
+            result->dataType = "UNDEFINED";
+            result->value = "PARSEDOUBLE operation requires a STRING type";
+            return result;
+        }
+
+        char *endptr;
+        double parsed_value = strtod(to_parse->value, &endptr);
+
+        if (*endptr != '\0')
+        {
+            result->dataType = "UNDEFINED";
+            result->value = "PARSEDOUBLE operation failed: invalid double format";
+            return result;
+        }
+
+        result->dataType = "DOUBLE";
+        result->value = (char *)calloc(30, sizeof(char));
+        sprintf(result->value, "%.6f", parsed_value);
+        return result;
+
+        break;
+    }
+    case EXP_PARSEFLOAT:
+    {
+        symbol *to_parse = evaluate_expression(expr->left, context);
+        if (strcmp(to_parse->dataType, "STRING") != 0)
+        {
+            result->dataType = "UNDEFINED";
+            result->value = "PARSEFLOAT operation requires a STRING type";
+            return result;
+        }
+        char *endptr;
+        float parsed_value = strtof(to_parse->value, &endptr);
+        if (*endptr != '\0')
+        {
+            result->dataType = "UNDEFINED";
+            result->value = "PARSEFLOAT operation failed: invalid float format";
+            return result;
+        }
+        result->dataType = "FLOAT";
+        result->value = (char *)calloc(30, sizeof(char));
+        sprintf(result->value, "%.6f", parsed_value);
+        return result;
+        break;
+    }
+    case EXP_VALUEOF:
+    {
+        symbol *to_convert = evaluate_expression(expr->left, context);
+        result->dataType = "STRING";
+        result->value = (char *)calloc(2 * strlen(to_convert->value) + 3, sizeof(char)); // Extra space for quotes and null terminator
+        sprintf(result->value, "\"%s\"", to_convert->value);
+        return result;
+        break;
+    }
+    case EXP_JOIN:
+    {
+        symbol *to_join = evaluate_expression(expr->list->head->expr, context);
+
+        char *joined_str = (char *)calloc(1, sizeof(char));
+        joined_str[0] = '\0';
+        ExpressionNode *current = expr->list->head->next;
+        while (current)
+        {
+            symbol *elem = evaluate_expression(current->expr, context);
+            if (strcmp(elem->dataType, "STRING") != 0)
+            {
+                result->dataType = "UNDEFINED";
+                result->value = "JOIN operation requires all elements to be of type STRING";
+                free(joined_str);
+                return result;
+            }
+            if (joined_str[0] != '\0')
+            {
+                joined_str = (char *)realloc(joined_str, strlen(joined_str) + strlen(to_join->value) + 1);
+                strcat(joined_str, to_join->value);
+            }
+            joined_str = (char *)realloc(joined_str, strlen(joined_str) + strlen(elem->value) + 1);
+            strcat(joined_str, elem->value);
+            current = current->next;
+        }
+
+        result->dataType = "STRING";
+        result->value = joined_str;
+        return result;
+        break;
+    }
+    case EXP_INDEXOF:
+    {
+
+        Context *ctx_search = context;
+
+        while (ctx_search)
+        {
+            if (SearchID(ctx_search->symbols_context, expr->value))
+            {
+                symbol *sym = SearchSymbol(ctx_search->symbols_context, expr->value);
+
+                if (strcmp(sym->type, "VECTOR") == 0 && sym->vectorValues)
+                {
+                    symbol *to_find = evaluate_expression(expr->left, context);
+                    int index = 0;
+                    VectorNode *current = sym->vectorValues->head;
+                    while (current)
+                    {
+                        if (strcmp(current->value->value, to_find->value) == 0 && strcmp(current->value->dataType, to_find->dataType) == 0)
+                        {
+                            result->dataType = "INTEGER";
+                            result->value = (char *)calloc(20, sizeof(char));
+                            sprintf(result->value, "%d", index);
+                            return result;
+                        }
+                        index++;
+                        current = current->next;
+                    }
+                    // Not found
+                    result->dataType = "INTEGER";
+                    result->value = (char *)calloc(20, sizeof(char));
+                    sprintf(result->value, "-1");
+                    return result;
+                }
+
+                result->dataType = "UNDEFINED";
+                result->value = "INDEXOF operation requires a VECTOR type with values";
+                return result;
+            }
+            ctx_search = ctx_search->after;
+        }
+
+        break;
+    }
+    case EXP_LENGTH:
+    {
 
         Context *ctx_search = context;
         while (ctx_search)
@@ -143,42 +295,80 @@ symbol *evaluate_expression(Expression *expr, Context *context)
             if (SearchID(ctx_search->symbols_context, expr->value))
             {
                 symbol *sym = SearchSymbol(ctx_search->symbols_context, expr->value);
-                if (strcmp(sym->type, "VECTOR") != 0 || !sym->vectorValues)
-                {
-                    result->dataType = "UNDEFINED";
-                    result->value = "Symbol is not a vector or has no values";
-                    return result;
-                }
 
-                VectorNode *curr = sym->vectorValues->head;
-                int curr_index = 0;
-                symbol *found_symbol = NULL;
-                while (curr)
+                if (strcmp(sym->type, "VECTOR") == 0 && sym->vectorValues)
+                    return get_legth_of_vector(sym->vectorValues);
+
+                result->dataType = "UNDEFINED";
+                result->value = "LENGTH operation requires an ARRAY, VECTOR, or MATRIX type with values";
+                return result;
+            }
+            ctx_search = ctx_search->after;
+        }
+
+        break;
+    }
+    case EXP_ADD:
+        Context *ctx_search = context;
+
+        while (ctx_search)
+        {
+
+            if (SearchID(ctx_search->symbols_context, expr->value))
+            {
+
+                symbol *sym = SearchSymbol(ctx_search->symbols_context, expr->value);
+
+                if (strcmp(sym->type, "VECTOR") == 0 && sym->vectorValues)
                 {
 
-                    if (index == curr_index)
+                    symbol *to_add = evaluate_expression(expr->left, context);
+
+                    if (!to_add)
                     {
-                        found_symbol = curr->value;
+                        result->dataType = "UNDEFINED";
+                        result->value = "ADD operation requires a valid expression";
+                        return result;
                     }
 
-                    curr = curr->next;
-                    curr_index++;
+                    if (strcmp(to_add->dataType, sym->dataType) != 0)
+                    {
+                        result->dataType = "UNDEFINED";
+                        result->value = "ADD operation type mismatch between vector subtype and expression type";
+                        return result;
+                    }
+
+                    fprintf(stderr, "Adding element of type");
+
+                    // Crear una copia del símbolo original
+                    symbol *new_sym = copy_symbol(sym);
+
+                    VectorNode *new_node = (VectorNode *)calloc(1, sizeof(VectorNode));
+                    new_node->value = to_add;
+                    new_node->next = NULL;
+
+                    if (!new_sym->vectorValues->head)
+                    {
+                        new_sym->vectorValues->head = new_node;
+                        new_sym->value = printVector(new_sym->vectorValues);
+                    }
+                    else
+                    {
+                        VectorList_addSym(new_sym->vectorValues, to_add);
+                        new_sym->value = printVector(new_sym->vectorValues);
+                    }
+
+                    return new_sym;
                 }
 
-                if (!found_symbol)
-                {
-                    result->dataType = "UNDEFINED";
-                    result->value = "Vector index out of bounds";
-                    return result;
-                }
-
-                return found_symbol;
+                result->dataType = "UNDEFINED";
+                result->value = "ADD operation requires a VECTOR type with values";
+                return result;
             }
 
             ctx_search = ctx_search->after;
         }
-        break;
-    }
+
     case EXP_MATRIX_ACCESS:
     {
         symbol *row_access = evaluate_expression(expr->left, context);
@@ -221,7 +411,6 @@ symbol *evaluate_expression(Expression *expr, Context *context)
         }
         break;
     }
-
     case EXP_ID:
     {
         Context *ctx_search = context;
@@ -249,6 +438,7 @@ symbol *evaluate_expression(Expression *expr, Context *context)
         return result;
     }
     default:
+        fprintf(stderr, "DEBUG: Unknown expression type %s\n", expr->type);
         return NULL;
     }
 }

@@ -67,6 +67,7 @@ BREAK_LINE \n
 ";" return ';';
 ":" return ':';
 "," return ',';
+"." return '.';
 
 "==" return EQUALS;
 
@@ -191,7 +192,17 @@ BREAK_LINE \n
 
 "parseFloat" return PARSEFLOAT;
 
+"valueOf" return VALUEOF;
 
+"join" return JOIN;
+
+"Arrays" return ARRAYS;
+
+"indexOf" return INDEXOF;
+
+"length" return LENGTH;
+
+"add" return ADD;
 
 "true" {
     yylval.sval = strdup(yytext);

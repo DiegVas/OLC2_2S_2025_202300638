@@ -110,5 +110,21 @@ get_expression_type(const char *type_str)
         return EXP_VECTOR_ACCESS;
     if (strcmp(type_str, "MATRIX_ACCESS") == 0)
         return EXP_MATRIX_ACCESS;
+    if (strcmp(type_str, "PARSEINT") == 0)
+        return EXP_PARSEINT;
+    if (strcmp(type_str, "PARSEDOUBLE") == 0)
+        return EXP_PARSEDOUBLE;
+    if (strcmp(type_str, "PARSEFLOAT") == 0)
+        return EXP_PARSEFLOAT;
+    if (strcmp(type_str, "VALUEOF") == 0)
+        return EXP_VALUEOF;
+    if (strcmp(type_str, "JOIN") == 0)
+        return EXP_JOIN;
+    if (strcmp(type_str, "INDEXOF") == 0)
+        return EXP_INDEXOF;
+    if (strcmp(type_str, "LENGTH") == 0)
+        return EXP_LENGTH;
+    if (strcmp(type_str, "ADD") == 0)
+        return EXP_ADD;
     return EXP_UNKNOWN;
 }

@@ -26,6 +26,7 @@ int yyerror(const char *s);
     typedef struct ListData ListData;
     typedef struct VectorList VectorList;
     typedef struct MatrixList MatrixList;
+    typedef struct ExpressionList ExpressionList;
 }
 
 %locations
@@ -36,6 +37,7 @@ int yyerror(const char *s);
     Instruccion* instr;
     InstruccionList* instrList;
     Expression* expr;
+    ExpressionList* exprList;
     IfData* ifdata;
     IfNodeList* ifnodelist;
     CaseNodeList* casenodelist;
@@ -60,6 +62,7 @@ int yyerror(const char *s);
 %token WHILE FOR
 %token EQUALS_OP
 %token NEW
+%token INTEGER_OBJ PARSEINT DOUBLE_OBJ PARSEDOUBLE FLOAT_OBJ PARSEFLOAT VALUEOF JOIN
 
 /* Simboloes dobles o mas */
 
@@ -70,6 +73,7 @@ int yyerror(const char *s);
 %token AND OR NOT
 %token GREATER_EQUALS LESS_EQUALS
 %token INCREMENT
+%token ARRAYS INDEXOF LENGTH ADD
 
 /* Tipo de los no-terminales que llevan valor */
 %type <instrList> program sentences
@@ -78,6 +82,7 @@ int yyerror(const char *s);
 %type <sval> primitive_types
 %type <expr> primitive_values
 %type <expr> expression;
+%type <exprList> exprList;
 %type <instr> assignment_expression;
 %type <ifdata> IF_STATEMENT
 %type <instrList> ELSE_STATEMENT
@@ -393,6 +398,20 @@ declaration:
             VectorList_addExp(instP->vectorValues, exp);
         }
         $$ = instP; }
+    //* int[] id = id.add(expr)
+    | primitive_types '[' ']' ID '=' ID '.' ADD '(' expression ')' {
+        Instruccion* instP = (Instruccion*)malloc(sizeof(Instruccion));
+        instP->id = $4;
+        instP->type = $1;
+        instP->column = @3.first_column;
+        instP->symbolType = "VECTOR";
+        instP->vectorValues = (VectorList*)calloc(1, sizeof(VectorList));
+        Expression* exp = (Expression*)calloc(1, sizeof(Expression));
+        exp->type = "ADD";
+        exp->value = strdup($6);
+        exp->left = $10;
+        VectorList_addExp(instP->vectorValues, exp);
+        $$ = instP; }
     | //* int[][] id = {{},{}}
     primitive_types '[' ']' '[' ']' ID '=' '{' optional_newlines matrixList '}'{
         Instruccion* instP = (Instruccion*)malloc(sizeof(Instruccion));
@@ -661,6 +680,61 @@ expression:
         exp->value = strdup("!");
         exp->left = $2;
         $$ = exp; }
+    //* Integer.parseInt(<cadena>);
+    | INTEGER_OBJ '.' PARSEINT '(' expression ')' {
+        Expression* exp = (Expression*)calloc(1, sizeof(Expression));
+        exp->type = "PARSEINT";
+        exp->value = strdup("Integer.parseInt");
+        exp->left = $5;
+        $$ = exp; }
+    //* Double.parseDouble(<cadena>);
+    | DOUBLE_OBJ '.' PARSEDOUBLE '(' expression ')' {
+        Expression* exp = (Expression*)calloc(1, sizeof(Expression));
+        exp->type = "PARSEDOUBLE";
+        exp->value = strdup("Double.parseDouble");
+        exp->left = $5;
+        $$ = exp; }
+    //* Float.parseFloat(<cadena>);
+    | FLOAT_OBJ '.' PARSEFLOAT '(' expression ')' {
+        Expression* exp = (Expression*)calloc(1, sizeof(Expression));
+        exp->type = "PARSEFLOAT";
+        exp->value = strdup("Float.parseFloat");
+        exp->left = $5;
+        $$ = exp; }
+    //* String.valueOf(<expresion>);
+    | STRING '.' VALUEOF '(' expression ')' {
+        Expression* exp = (Expression*)calloc(1, sizeof(Expression));
+        exp->type = "VALUEOF";
+        exp->value = strdup("String.valueOf");
+        exp->left = $5;
+        $$ = exp; }
+    //* String.join(<separador>, <listaExpresiones>);
+    | STRING '.' JOIN '(' exprList ')' {
+        Expression* exp = (Expression*)calloc(1, sizeof(Expression));
+        exp->type = "JOIN";
+        exp->value = strdup("String.join");
+        exp->list = $5;
+        $$ = exp; }
+    //* Arrays.indexOf(<arreglo>, <valor>);
+    | ARRAYS '.' INDEXOF '(' ID ',' expression ')' {
+        Expression* exp = (Expression*)calloc(1, sizeof(Expression));
+        exp->type = "INDEXOF";
+        exp->value = $5;
+        exp->left = $7;
+        $$ = exp; }
+    //* <arreglo>.length
+    | ID '.' LENGTH {
+        Expression* exp = (Expression*)calloc(1, sizeof(Expression));
+        exp->type = "LENGTH";
+        exp->value = strdup($1);
+        $$ = exp; }
+    //* <arreglo>.add(<valor>);
+    | ID '.' ADD '(' expression ')' {
+        Expression* exp = (Expression*)calloc(1, sizeof(Expression));
+        exp->type = "ADD";
+        exp->value = strdup($1);
+        exp->left = $5;
+        $$ = exp; }
     //* id[]
     | ID '[' expression ']' {
         Expression* exp = (Expression*)calloc(1, sizeof(Expression));
@@ -677,6 +751,22 @@ expression:
         exp->right = $6;
         $$ = exp;
     };
+
+exprList:
+    /* empty */ { 
+        ExpressionList* exprList = create_expression_list();
+        $$ = exprList;
+    }
+    | expression {
+        ExpressionList* exprList = create_expression_list();
+        ExpressionList_add(exprList, $1);
+        $$ = exprList;
+     }
+    | exprList ',' expression {
+        ExpressionList_add($1, $3);
+        $$ = $1;
+     }
+
 
 //* CONDICIONALES
 

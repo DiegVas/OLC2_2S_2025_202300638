@@ -38,7 +38,16 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
         if (strcmp(instruction->symbolType, "VECTOR") == 0)
         {
             VectorList *vec_values = instruction->vectorValues;
-            vec_values = evaluate_vector(instruction->type, vec_values, context);
+
+            if (strcmp(vec_values->head->exprData->type, "ADD") == 0)
+            {
+                vec_values = evaluate_expression(vec_values->head->exprData, context)->vectorValues;
+            }
+            else
+            {
+                vec_values = evaluate_vector(instruction->type, vec_values, context);
+            }
+
             char *vec_str = printVector(vec_values);
 
             symbol *new_symbol = (symbol *)calloc(1, sizeof(symbol));
