@@ -103,10 +103,35 @@ int yyerror(const char *s);
 %type <paramlist> paramsList
 
 
-// precedencia menor a mayor
+/* Precedencias y asociatividades */
+
+/* Asignación (más baja, derecha‑asociativa) */
+%right '=' PLUS_ASSIGN MINUS_ASSIGN MULT_ASSIGN DIV_ASSIGN MOD_ASSIGN
+%right AND_ASSIGN OR_ASSIGN XOR_ASSIGN LEFT_SHIFT_ASSIGN RIGHT_SHIFT_ASSIGN
+
+/* Lógicas */
+%left OR          /* || */
+%left AND         /* && */
+
+/* Bitwise */
+%left '|'         /* | */
+%left '^'         /* ^ */
+%left '&'         /* & */
+
+/* Comparaciones */
+%nonassoc EQUALS NOT_EQUALS          /* == != */
+%nonassoc '<' '>' LESS_EQUALS GREATER_EQUALS  /* < > <= >= */
+
+/* Shifts */
+%left LEFT_SHIFT RIGHT_SHIFT         /* << >> */
+
+/* Aritmética binaria */
 %left '+' '-' 
-%left '*' '/' 
-%left '(' ')'
+%left '*' '/' '%'
+
+/* Unarios (más alta) */
+%right NOT INCREMENT                 /* ! ++ (prefijo) */
+%right UMINUS                        /* para - unario */
 
 %%
 
@@ -806,14 +831,6 @@ expression:
         exp->value = strdup($1);
         exp->list = $3;
         $$ = exp;
-    }
-    | error {
-        // Recuperación de error en expresiones
-        Expression* exp = (Expression*)calloc(1, sizeof(Expression));
-        exp->type = "ERROR";
-        exp->value = strdup("EXPRESION_INVALIDA");
-        yyerrok;
-        $$ = exp;
     };
 
 exprList:
@@ -829,17 +846,6 @@ exprList:
     | exprList ',' expression {
         ExpressionList_add($1, $3);
         $$ = $1;
-     }
-    | exprList ',' error {
-        // Recuperación de error en lista de expresiones
-        yyerrok;
-        $$ = $1;
-     }
-    | error {
-        // Recuperación de error al inicio de lista de expresiones
-        ExpressionList* exprList = create_expression_list();
-        yyerrok;
-        $$ = exprList;
      }
 
 
@@ -1028,21 +1034,11 @@ paramsList:
 
 // Función para reinicializar el estado del parser
 void reset_parser_state() {
-    // Reinicializar variables del lexer
+    // Reinicializar solo las variables básicas del lexer
     extern int yylineno;
     extern int yycolumn; 
-    extern FILE *yyin;
     yylineno = 1;
     yycolumn = 1;
-    
-    // Limpiar el estado de error del parser
-    extern int yynerrs;
-    yynerrs = 0;
-    
-    // Reinicializar yyin si es necesario
-    if (yyin && yyin != stdin) {
-        rewind(yyin);
-    }
 }
 
 int yyerror(const char *s)

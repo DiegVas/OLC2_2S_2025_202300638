@@ -423,12 +423,17 @@ symbol *evaluate_expression(Expression *expr, Context *context)
             {
                 symbol *sym = SearchSymbol(ctx_search->symbols_context, expr->value);
                 fprintf(stderr, "DEBUG: Found symbol %s of type %s with value %s\n", sym->id, sym->dataType, sym->value);
-                Expression *sym_expr = (Expression *)calloc(1, sizeof(Expression));
-                sym_expr->type = sym->dataType;
-                sym_expr->value = sym->value;
-                sym_expr->line = *(sym->line);
-                sym_expr->column = *(sym->column);
-                return evaluate_expression(sym_expr, ctx_search);
+
+                // En lugar de crear una nueva expresión y evaluar recursivamente,
+                // devolvemos directamente una copia del símbolo
+                symbol *result_copy = (symbol *)calloc(1, sizeof(symbol));
+                result_copy->value = strdup(sym->value);
+                result_copy->dataType = strdup(sym->dataType);
+                result_copy->type = strdup(sym->type);
+                result_copy->id = strdup(sym->id);
+                result_copy->environment = strdup(sym->environment);
+
+                return result_copy;
             }
 
             ctx_search = ctx_search->after;
@@ -443,7 +448,7 @@ symbol *evaluate_expression(Expression *expr, Context *context)
     {
         fprintf(stderr, "DEBUG: Function call detected for ID: %s\n", expr->value);
 
-        Context *ctx_func = malloc(sizeof(Context));
+        Context *ctx_func = calloc(1, sizeof(Context));
         ctx_func->after = context;
         ctx_func->symbols_context = Symbol_table_create();
         ctx_func->nombre = "Function_Call";
@@ -534,6 +539,12 @@ symbol *evaluate_expression(Expression *expr, Context *context)
             semantic_analysis_execute(curr->instr, ctx_func);
             if (strcmp(curr->instr->InstType, "Return") == 0)
                 break;
+            else if (ctx_func->return_value)
+            {
+                fprintf(stderr, "Function returned with value: %s of type %s\n", ctx_func->return_value->value, ctx_func->return_value->dataType);
+                break;
+            }
+
             curr = curr->next;
         }
 

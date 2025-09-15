@@ -15,6 +15,8 @@ symbol *perform_comparative_operation(Expression *exprIZQ, Expression *exprDER, 
 
     if (strcmp(left->dataType, right->dataType) != 0)
     {
+        fprintf(stderr, "Comparative operation requires both operands to be of the same type: left is %s, right is %s\n", left->dataType, right->dataType);
+        fprintf(stderr, "Left value: %s, Right value: %s\n", left->value, right->value);
         result->dataType = strdup("UNDEFINED");
         result->value = strdup("Comparative operation requires both operands to be of the same type");
         return result;

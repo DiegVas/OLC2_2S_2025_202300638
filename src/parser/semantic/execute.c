@@ -308,7 +308,9 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
 
         bool condition_value = boolean_value(if_condition_value->value);
 
-        Context *ctx_if = malloc(sizeof(Context));
+        fprintf(stderr, "Valor de la condición IF: %s (bool: %d)\n", if_condition_value->value, condition_value);
+
+        Context *ctx_if = calloc(1, sizeof(Context));
         ctx_if->after = context;
         ctx_if->symbols_context = Symbol_table_create();
         ctx_if->nombre = "If";
@@ -319,11 +321,16 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
             while (curr)
             {
                 semantic_analysis_execute(curr->instr, ctx_if);
+                if (strcmp(curr->instr->InstType, "RETURN") == 0)
+                    break;
+
+                semantic_analysis_execute(curr->instr, ctx_if);
                 curr = curr->next;
             }
         }
         else
         {
+            fprintf(stderr, "Valor de la condición ELSE: %s (bool: %d)\n", if_condition_value->value, condition_value);
             bool executed_elseif = false;
             IfNodeList *curr_elseif = else_ifs;
             IfNode *curr_node = curr_elseif ? curr_elseif->head : NULL;
@@ -336,6 +343,12 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
                     while (curr)
                     {
                         semantic_analysis_execute(curr->instr, ctx_if);
+                        if (strcmp(curr->instr->InstType, "RETURN") == 0)
+                        {
+                            executed_elseif = true;
+                            break;
+                        }
+
                         curr = curr->next;
                     }
                     executed_elseif = true;
@@ -348,12 +361,16 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
                 InstruccionNode *curr = else_block->head;
                 while (curr)
                 {
+                    if (strcmp(curr->instr->InstType, "RETURN") == 0)
+                        break;
+
                     semantic_analysis_execute(curr->instr, ctx_if);
                     curr = curr->next;
                 }
             }
         }
         Symbol_table_insertContext(SymbolTable_General, ctx_if->symbols_context);
+
         break;
     }
     case SWITCH_STATEMENT:
@@ -364,7 +381,7 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
         switch_id_value->type = "ID";
         switch_id_value->value = switch_id;
 
-        Context *ctx_switch = malloc(sizeof(Context));
+        Context *ctx_switch = calloc(1, sizeof(Context));
         ctx_switch->after = context;
         ctx_switch->symbols_context = Symbol_table_create();
         ctx_switch->nombre = "Switch";
@@ -399,6 +416,9 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
                 InstruccionNode *curr_instr = curr_case->caseData->block->head;
                 while (curr_instr)
                 {
+                    if (strcmp(curr_instr->instr->InstType, "RETURN") == 0)
+                        break;
+
                     semantic_analysis_execute(curr_instr->instr, ctx_switch);
                     curr_instr = curr_instr->next;
                 }

@@ -133,7 +133,8 @@ extern int yydebug;
     ARRAYS = 316,                  /* ARRAYS  */
     INDEXOF = 317,                 /* INDEXOF  */
     LENGTH = 318,                  /* LENGTH  */
-    ADD = 319                      /* ADD  */
+    ADD = 319,                     /* ADD  */
+    UMINUS = 320                   /* UMINUS  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -160,7 +161,7 @@ union YYSTYPE
     MatrixList* MList;
     paramsList* paramlist;
 
-#line 164 "build/parser.tab.h"
+#line 165 "build/parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;
