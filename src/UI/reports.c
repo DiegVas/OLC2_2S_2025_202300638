@@ -1,5 +1,6 @@
 #include "UI.h"
 #include "../structures/parser.h"
+#include "../reports/ast_generator.h"
 
 // Function to safely check if a string pointer is valid
 static bool is_valid_string(const char *str)
@@ -31,30 +32,34 @@ GtkWidget *create_reports_panel()
 {
     GtkWidget *notebook = gtk_notebook_new();
 
-    // AST Tab
+    // AST Tab with image viewer
     GtkWidget *ast_scrolled = gtk_scrolled_window_new(NULL, NULL);
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(ast_scrolled),
                                    GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
 
-    GtkWidget *ast_view = gtk_text_view_new();
-    gtk_text_view_set_monospace(GTK_TEXT_VIEW(ast_view), TRUE);
-    gtk_text_view_set_editable(GTK_TEXT_VIEW(ast_view), FALSE);
+    // Create a viewport with padding for the AST image
+    GtkWidget *ast_viewport = gtk_viewport_new(NULL, NULL);
 
-    // Add padding to AST
-    gtk_text_view_set_left_margin(GTK_TEXT_VIEW(ast_view), 15);
-    gtk_text_view_set_right_margin(GTK_TEXT_VIEW(ast_view), 15);
-    gtk_text_view_set_top_margin(GTK_TEXT_VIEW(ast_view), 15);
-    gtk_text_view_set_bottom_margin(GTK_TEXT_VIEW(ast_view), 15);
-
-    // Apply darker background to AST
-    GdkRGBA ast_bg_color, ast_fg_color;
+    // Apply dark background to viewport
+    GdkRGBA ast_bg_color;
     gdk_rgba_parse(&ast_bg_color, "#0A0A0A");
-    gdk_rgba_parse(&ast_fg_color, "#ffffff");
-    gtk_widget_override_background_color(ast_view, GTK_STATE_FLAG_NORMAL, &ast_bg_color);
-    gtk_widget_override_color(ast_view, GTK_STATE_FLAG_NORMAL, &ast_fg_color);
+    gtk_widget_override_background_color(ast_viewport, GTK_STATE_FLAG_NORMAL, &ast_bg_color);
 
-    GtkTextBuffer *ast_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(ast_view));
-    gtk_container_add(GTK_CONTAINER(ast_scrolled), ast_view);
+    // Create image widget for AST
+    GtkWidget *ast_image = gtk_image_new();
+    gtk_widget_set_margin_top(ast_image, 20);
+    gtk_widget_set_margin_bottom(ast_image, 20);
+    gtk_widget_set_margin_left(ast_image, 20);
+    gtk_widget_set_margin_right(ast_image, 20);
+
+    // Store AST image reference in global widgets
+    if (global_widgets)
+    {
+        global_widgets->ast_view = ast_image;
+    }
+
+    gtk_container_add(GTK_CONTAINER(ast_viewport), ast_image);
+    gtk_container_add(GTK_CONTAINER(ast_scrolled), ast_viewport);
     gtk_notebook_append_page(GTK_NOTEBOOK(notebook), ast_scrolled, gtk_label_new("AST"));
 
     // Symbols Table Tab
@@ -300,4 +305,54 @@ void update_errors_table_safe(GtkListStore *store, ErrorList *list)
         curr = curr->next;
         count++;
     }
+}
+
+// Función para actualizar el AST en la interfaz
+void update_ast_report()
+{
+    if (!global_widgets || !global_widgets->ast_view)
+        return;
+
+    // Crear carpeta reports si no existe
+    system("mkdir -p reports");
+
+    // Crear AST de ejemplo
+    ASTNode *example_ast = create_example_ast();
+
+    // Generar archivos en la carpeta reports
+    char dot_filename[] = "reports/ast.dot";
+    char png_filename[] = "reports/ast.png";
+
+    generate_ast_dot_file(example_ast, dot_filename);
+    generate_ast_image(dot_filename, png_filename);
+
+    // Cargar la imagen en el widget
+    gtk_image_set_from_file(GTK_IMAGE(global_widgets->ast_view), png_filename);
+
+    // Limpiar memoria
+    ASTNode_destroy(example_ast);
+
+    printf("AST actualizado en la interfaz y archivos generados en reports/\n");
+}
+
+// Función para generar AST desde el parser (para uso futuro)
+void update_ast_from_parser(ASTNode *root)
+{
+    if (!global_widgets || !global_widgets->ast_view || !root)
+        return;
+
+    // Crear carpeta reports si no existe
+    system("mkdir -p reports");
+
+    // Generar archivos en la carpeta reports
+    char dot_filename[] = "reports/ast.dot";
+    char png_filename[] = "reports/ast.png";
+
+    generate_ast_dot_file(root, dot_filename);
+    generate_ast_image(dot_filename, png_filename);
+
+    // Cargar la imagen en el widget
+    gtk_image_set_from_file(GTK_IMAGE(global_widgets->ast_view), png_filename);
+
+    printf("AST del parser actualizado en la interfaz y archivos generados en reports/\n");
 }

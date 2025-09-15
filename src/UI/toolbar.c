@@ -204,11 +204,9 @@ void on_run_clicked(GtkToolButton *button, gpointer user_data)
     // Limpiar la consola
     gtk_text_buffer_set_text(console_buffer, "", -1);
 
-    // Mostrar el contenido enviado al parser
+    // Mostrar mensaje de inicio del análisis
     gtk_text_buffer_insert_at_cursor(console_buffer, "=== Ejecutando análisis léxico y sintáctico ===\n", -1);
-    gtk_text_buffer_insert_at_cursor(console_buffer, "\n[Contenido enviado al parser]:\n", -1);
-    gtk_text_buffer_insert_at_cursor(console_buffer, source_code, -1);
-    gtk_text_buffer_insert_at_cursor(console_buffer, "\n\n=== Resultado del análisis ===\n", -1);
+    gtk_text_buffer_insert_at_cursor(console_buffer, "\n=== Resultado del análisis ===\n", -1);
 
     // Crear archivo temporal para el código fuente
     char temp_filename[] = "/tmp/javalang_temp_XXXXXX";
@@ -234,23 +232,41 @@ void on_run_clicked(GtkToolButton *button, gpointer user_data)
             FILE *temp_file = fopen(temp_filename, "r");
             if (temp_file)
             {
+                // Reinicializar completamente el estado del lexer/parser
                 yyin = temp_file;
-                extern int yylineno;
-                yylineno = 1;
-                extern int yycolumn;
-                yycolumn = 1;
 
-                // ! Inicializar variables
-                // ! Ejecutar el parser
+                // Usar la función de reinicialización del parser
+                extern void reset_parser_state(void);
+                reset_parser_state();
 
+                // Limpiar el buffer del lexer
+                extern void yyrestart(FILE *);
+                yyrestart(yyin);
+
+                // Limpiar variables globales del parser
                 extern InstruccionList *list_tokens;
-                InstruccionList_destroy(list_tokens);
+                if (list_tokens)
+                {
+                    InstruccionList_destroy(list_tokens);
+                }
                 list_tokens = InstruccionList_create();
 
                 extern ErrorList *list_errors;
-                ErrorList_destroy(list_errors);
+                if (list_errors)
+                {
+                    ErrorList_destroy(list_errors);
+                }
                 list_errors = createErrorList();
 
+                // Limpiar tabla de símbolos
+                extern symbol_table *SymbolTable_General;
+                if (SymbolTable_General)
+                {
+                    Symbol_table_destroy(SymbolTable_General);
+                }
+                SymbolTable_General = Symbol_table_create();
+
+                // Ejecutar el parser
                 int parse_result = yyparse();
 
                 semantic_analysis();
@@ -258,6 +274,9 @@ void on_run_clicked(GtkToolButton *button, gpointer user_data)
                 extern symbol_table *SymbolTable_General;
                 update_symbols_table_safe(global_widgets->symbols_store, SymbolTable_General);
                 update_errors_table_safe(global_widgets->errors_store, list_errors);
+
+                // Actualizar el AST con el ejemplo
+                update_ast_report();
 
                 fclose(temp_file);
 

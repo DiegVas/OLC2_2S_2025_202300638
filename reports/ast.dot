@@ -1,0 +1,47 @@
+digraph AST {
+    rankdir=TB;
+    node [fontname="Arial"];
+    edge [fontname="Arial"];
+
+    node0 [label="Program", shape=box, style=filled, fillcolor=lightblue];
+    node0 -> node1;
+    node1 [label="Declarations", shape=box, style=filled, fillcolor=lightblue];
+    node1 -> node3;
+    node3 [label="VarDecl", shape=box, style=filled, fillcolor=lightblue];
+    node3 -> node4;
+    node4 [label="int", shape=box, style=filled, fillcolor=lightblue];
+    node3 -> node5;
+    node5 [label="x", shape=box, style=filled, fillcolor=lightblue];
+    node3 -> node6;
+    node6 [label="10", shape=box, style=filled, fillcolor=lightblue];
+    node0 -> node2;
+    node2 [label="Statements", shape=box, style=filled, fillcolor=lightblue];
+    node2 -> node7;
+    node7 [label="Assignment", shape=box, style=filled, fillcolor=lightblue];
+    node7 -> node8;
+    node8 [label="x", shape=box, style=filled, fillcolor=lightblue];
+    node7 -> node9;
+    node9 [label="Expression", shape=box, style=filled, fillcolor=lightblue];
+    node9 -> node10;
+    node10 [label="+", shape=box, style=filled, fillcolor=lightblue];
+    node10 -> node11;
+    node11 [label="x", shape=box, style=filled, fillcolor=lightblue];
+    node10 -> node12;
+    node12 [label="5", shape=box, style=filled, fillcolor=lightblue];
+    node2 -> node13;
+    node13 [label="IfStatement", shape=box, style=filled, fillcolor=lightblue];
+    node13 -> node14;
+    node14 [label="Condition", shape=box, style=filled, fillcolor=lightblue];
+    node14 -> node15;
+    node15 [label=">", shape=box, style=filled, fillcolor=lightblue];
+    node15 -> node16;
+    node16 [label="x", shape=box, style=filled, fillcolor=lightblue];
+    node15 -> node17;
+    node17 [label="15", shape=box, style=filled, fillcolor=lightblue];
+    node13 -> node18;
+    node18 [label="Block", shape=box, style=filled, fillcolor=lightblue];
+    node18 -> node19;
+    node19 [label="println", shape=box, style=filled, fillcolor=lightblue];
+    node19 -> node20;
+    node20 [label="x es mayor que 15", shape=box, style=filled, fillcolor=lightblue];
+}

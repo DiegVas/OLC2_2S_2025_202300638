@@ -27,6 +27,7 @@ int yyerror(const char *s);
     typedef struct VectorList VectorList;
     typedef struct MatrixList MatrixList;
     typedef struct ExpressionList ExpressionList;
+    typedef struct paramsList paramsList;
 }
 
 %locations
@@ -46,6 +47,7 @@ int yyerror(const char *s);
     ListData* listdata;
     VectorList* VList;
     MatrixList* MList;
+    paramsList* paramlist;
 }
 
 /* Tokens */
@@ -63,6 +65,7 @@ int yyerror(const char *s);
 %token EQUALS_OP
 %token NEW
 %token INTEGER_OBJ PARSEINT DOUBLE_OBJ PARSEDOUBLE FLOAT_OBJ PARSEFLOAT VALUEOF JOIN
+%token RETURN VOID
 
 /* Simboloes dobles o mas */
 
@@ -97,6 +100,7 @@ int yyerror(const char *s);
 %type optional_newlines
 %type <VList> vectorList
 %type <MList> matrixList
+%type <paramlist> paramsList
 
 
 // precedencia menor a mayor
@@ -144,6 +148,11 @@ sentence
     }
     | separator {
         $$ = NULL;
+    }
+    | error separator {
+        // Recuperación de error: saltar hasta el siguiente separador
+        yyerrok;
+        $$ = NULL;
     };
 
 separator
@@ -188,11 +197,13 @@ instruction:
     | WHILE_STATEMENT {
         $1->InstType = "WHILE_STATEMENT";
         $1->line = @1.first_line;
-        $$ = $1; }
+        $$ = $1; 
+    }
     | FOR_STATEMENT {
         $1->InstType = "FOR_STATEMENT";
         $1->line = @1.first_line;
-        $$ = $1; }
+        $$ = $1; 
+    }
     | BREAK {
         Instruccion* instP = (Instruccion*)malloc(sizeof(Instruccion));
         instP->InstType = "BREAK";
@@ -206,7 +217,24 @@ instruction:
         instP->line = @1.first_line;
         instP->column = @1.first_column;
         $$ = instP;
-    };
+    } 
+    | RETURN expression {
+        Instruccion* instP = (Instruccion*)malloc(sizeof(Instruccion));
+        instP->InstType = "RETURN";
+        instP->value = $2;
+        instP->line = @1.first_line;
+        instP->column = @1.first_column;
+        $$ = instP;
+    }
+    | ID '(' ')' {
+        Instruccion* instP = (Instruccion*)malloc(sizeof(Instruccion));
+        instP->InstType = "VOID_CALL";
+        instP->id = $1;
+        instP->line = @1.first_line;
+        instP->column = @1.first_column;
+        $$ = instP;
+    }
+    ;
 
 //* Asignacion de valores a variables ya existentes
 
@@ -440,6 +468,26 @@ declaration:
             }
             MatrixList_add(instP->matrixValues, vecList);
             }
+        $$ = instP; }
+    //* int id (params) { ... }
+    | primitive_types ID '(' paramsList ')' '{' BREAK_LINE sentences '}' {
+        Instruccion* instP = (Instruccion*)malloc(sizeof(Instruccion));
+        instP->id = $2;
+        instP->type = $1;
+        instP->column = @2.first_column;
+        instP->symbolType = "FUNCTION";
+        instP->functionData = (Function*)calloc(1, sizeof(Function));
+        instP->functionData->parameters = $4;
+        instP->functionData->body = $8;
+        $$ = instP; }
+    //* void id { ... }
+    | VOID ID '(' ')' '{' BREAK_LINE sentences '}' {
+        Instruccion* instP = (Instruccion*)malloc(sizeof(Instruccion));
+        instP->id = $2;
+        instP->column = @2.first_column;
+        instP->symbolType = "VOID";
+        instP->functionData = (Function*)calloc(1, sizeof(Function));
+        instP->functionData->body = $7;
         $$ = instP; }
     //* int ID[] = expression
     | primitive_types ID dimensions '=' dimension_expression {
@@ -750,6 +798,22 @@ expression:
         exp->left = $3;
         exp->right = $6;
         $$ = exp;
+    }
+    //* id(params)
+    | ID '(' exprList ')' {
+        Expression* exp = (Expression*)calloc(1, sizeof(Expression));
+        exp->type = "FUNCTION_CALL";
+        exp->value = strdup($1);
+        exp->list = $3;
+        $$ = exp;
+    }
+    | error {
+        // Recuperación de error en expresiones
+        Expression* exp = (Expression*)calloc(1, sizeof(Expression));
+        exp->type = "ERROR";
+        exp->value = strdup("EXPRESION_INVALIDA");
+        yyerrok;
+        $$ = exp;
     };
 
 exprList:
@@ -765,6 +829,17 @@ exprList:
     | exprList ',' expression {
         ExpressionList_add($1, $3);
         $$ = $1;
+     }
+    | exprList ',' error {
+        // Recuperación de error en lista de expresiones
+        yyerrok;
+        $$ = $1;
+     }
+    | error {
+        // Recuperación de error al inicio de lista de expresiones
+        ExpressionList* exprList = create_expression_list();
+        yyerrok;
+        $$ = exprList;
      }
 
 
@@ -934,18 +1009,71 @@ dimension_value:
     | optional_newlines BREAK_LINE
     ;
 
+
+//* Manejo de funciones
+
+paramsList: 
+    /* empty */ { $$ = createParamsList(); }
+    | primitive_types ID {
+        paramsList* paramList = createParamsList();
+        addParam(paramList, $1, $2);
+        $$ = paramList;
+     }
+    | paramsList ',' primitive_types ID {
+        addParam($1, $3, $4);
+        $$ = $1;
+     }
+
 %%
+
+// Función para reinicializar el estado del parser
+void reset_parser_state() {
+    // Reinicializar variables del lexer
+    extern int yylineno;
+    extern int yycolumn; 
+    extern FILE *yyin;
+    yylineno = 1;
+    yycolumn = 1;
+    
+    // Limpiar el estado de error del parser
+    extern int yynerrs;
+    yynerrs = 0;
+    
+    // Reinicializar yyin si es necesario
+    if (yyin && yyin != stdin) {
+        rewind(yyin);
+    }
+}
 
 int yyerror(const char *s)
 {
     extern YYLTYPE yylloc;
-    printf("Syntax Error: %s en línea %d, columna %d\n", s, yylloc.first_line, yylloc.first_column);
+    
+    // Crear mensaje de error más detallado
+    char detailed_message[512];
+    snprintf(detailed_message, sizeof(detailed_message), 
+             "%s en línea %d, columna %d", s, yylloc.first_line, yylloc.first_column);
+    
+    printf("Syntax Error: %s\n", detailed_message);
+    
+    // Verificar que list_errors esté inicializada
+    if (list_errors == NULL) {
+        list_errors = createErrorList();
+    }
+    
     Error *error = malloc(sizeof(Error));
     error->type = strdup("Sintáctico");
-    error->environment = strdup("-");
-    error->message = strdup(s);
+    error->environment = strdup("Global");
+    error->message = strdup(detailed_message);
     error->line = yylloc.first_line;
     error->column = yylloc.first_column;
+    
     insertError(list_errors, error);
+    
+    // Limpiar el estado del parser para mejor recuperación
+    extern int yychar;
+    yychar = YYEMPTY;
+    
+    // Continuar con el análisis (no abortar)
     return 0;
 }

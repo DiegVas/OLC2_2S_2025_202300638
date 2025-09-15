@@ -59,8 +59,9 @@ extern int yydebug;
     typedef struct VectorList VectorList;
     typedef struct MatrixList MatrixList;
     typedef struct ExpressionList ExpressionList;
+    typedef struct paramsList paramsList;
 
-#line 64 "build/parser.tab.h"
+#line 65 "build/parser.tab.h"
 
 /* Token kinds.  */
 #ifndef YYTOKENTYPE
@@ -107,30 +108,32 @@ extern int yydebug;
     PARSEFLOAT = 291,              /* PARSEFLOAT  */
     VALUEOF = 292,                 /* VALUEOF  */
     JOIN = 293,                    /* JOIN  */
-    LEFT_SHIFT = 294,              /* LEFT_SHIFT  */
-    RIGHT_SHIFT = 295,             /* RIGHT_SHIFT  */
-    PLUS_ASSIGN = 296,             /* PLUS_ASSIGN  */
-    MINUS_ASSIGN = 297,            /* MINUS_ASSIGN  */
-    MULT_ASSIGN = 298,             /* MULT_ASSIGN  */
-    DIV_ASSIGN = 299,              /* DIV_ASSIGN  */
-    MOD_ASSIGN = 300,              /* MOD_ASSIGN  */
-    AND_ASSIGN = 301,              /* AND_ASSIGN  */
-    OR_ASSIGN = 302,               /* OR_ASSIGN  */
-    XOR_ASSIGN = 303,              /* XOR_ASSIGN  */
-    LEFT_SHIFT_ASSIGN = 304,       /* LEFT_SHIFT_ASSIGN  */
-    RIGHT_SHIFT_ASSIGN = 305,      /* RIGHT_SHIFT_ASSIGN  */
-    EQUALS = 306,                  /* EQUALS  */
-    NOT_EQUALS = 307,              /* NOT_EQUALS  */
-    AND = 308,                     /* AND  */
-    OR = 309,                      /* OR  */
-    NOT = 310,                     /* NOT  */
-    GREATER_EQUALS = 311,          /* GREATER_EQUALS  */
-    LESS_EQUALS = 312,             /* LESS_EQUALS  */
-    INCREMENT = 313,               /* INCREMENT  */
-    ARRAYS = 314,                  /* ARRAYS  */
-    INDEXOF = 315,                 /* INDEXOF  */
-    LENGTH = 316,                  /* LENGTH  */
-    ADD = 317                      /* ADD  */
+    RETURN = 294,                  /* RETURN  */
+    VOID = 295,                    /* VOID  */
+    LEFT_SHIFT = 296,              /* LEFT_SHIFT  */
+    RIGHT_SHIFT = 297,             /* RIGHT_SHIFT  */
+    PLUS_ASSIGN = 298,             /* PLUS_ASSIGN  */
+    MINUS_ASSIGN = 299,            /* MINUS_ASSIGN  */
+    MULT_ASSIGN = 300,             /* MULT_ASSIGN  */
+    DIV_ASSIGN = 301,              /* DIV_ASSIGN  */
+    MOD_ASSIGN = 302,              /* MOD_ASSIGN  */
+    AND_ASSIGN = 303,              /* AND_ASSIGN  */
+    OR_ASSIGN = 304,               /* OR_ASSIGN  */
+    XOR_ASSIGN = 305,              /* XOR_ASSIGN  */
+    LEFT_SHIFT_ASSIGN = 306,       /* LEFT_SHIFT_ASSIGN  */
+    RIGHT_SHIFT_ASSIGN = 307,      /* RIGHT_SHIFT_ASSIGN  */
+    EQUALS = 308,                  /* EQUALS  */
+    NOT_EQUALS = 309,              /* NOT_EQUALS  */
+    AND = 310,                     /* AND  */
+    OR = 311,                      /* OR  */
+    NOT = 312,                     /* NOT  */
+    GREATER_EQUALS = 313,          /* GREATER_EQUALS  */
+    LESS_EQUALS = 314,             /* LESS_EQUALS  */
+    INCREMENT = 315,               /* INCREMENT  */
+    ARRAYS = 316,                  /* ARRAYS  */
+    INDEXOF = 317,                 /* INDEXOF  */
+    LENGTH = 318,                  /* LENGTH  */
+    ADD = 319                      /* ADD  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -139,7 +142,7 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 34 "src/parser/parser.y"
+#line 35 "src/parser/parser.y"
 
     char* sval;
     int ival;
@@ -155,8 +158,9 @@ union YYSTYPE
     ListData* listdata;
     VectorList* VList;
     MatrixList* MList;
+    paramsList* paramlist;
 
-#line 160 "build/parser.tab.h"
+#line 164 "build/parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

@@ -6,6 +6,8 @@ symbol *evaluate_expression(Expression *expr, Context *context)
 {
     ExpressionType type = get_expression_type(expr->type);
 
+    extern symbol_table *SymbolTable_General;
+
     symbol *result = (symbol *)calloc(1, sizeof(symbol));
 
     Expression *exprIZQ = expr->left;
@@ -437,6 +439,117 @@ symbol *evaluate_expression(Expression *expr, Context *context)
         result->environment = context->nombre;
         return result;
     }
+    case EXP_FUNCTION_CALL:
+    {
+        fprintf(stderr, "DEBUG: Function call detected for ID: %s\n", expr->value);
+
+        Context *ctx_func = malloc(sizeof(Context));
+        ctx_func->after = context;
+        ctx_func->symbols_context = Symbol_table_create();
+        ctx_func->nombre = "Function_Call";
+
+        ExpressionNode *current_param = expr->list ? expr->list->head : NULL;
+
+        symbol *func_symbol = NULL;
+
+        Context *ctx_search = context;
+        while (ctx_search)
+        {
+            if (SearchID(ctx_search->symbols_context, expr->value))
+            {
+                func_symbol = SearchSymbol(ctx_search->symbols_context, expr->value);
+
+                if (strcmp(func_symbol->type, "FUNCTION") != 0 || !func_symbol->functionValues)
+                {
+                    result->dataType = "UNDEFINED";
+                    result->value = "Symbol is not a function or has no values";
+                    return result;
+                }
+
+                if (!func_symbol->functionValues->parameters || !func_symbol->functionValues->parameters->head)
+                {
+                    result->dataType = "UNDEFINED";
+                    result->value = "Function has no parameters defined";
+                    return result;
+                }
+
+                params *param_node = func_symbol->functionValues->parameters->head;
+                int param_index = 0;
+                while (param_node && current_param)
+                {
+                    symbol *param_value = evaluate_expression(current_param->expr, context);
+                    if (strcmp(param_value->dataType, "UNDEFINED") == 0)
+                    {
+                        result->dataType = "UNDEFINED";
+                        result->value = "Error evaluating function parameter expression";
+                        return result;
+                    }
+
+                    if (strcmp(param_value->dataType, param_node->type) != 0)
+                    {
+                        result->dataType = "UNDEFINED";
+                        result->value = "Function parameter type mismatch";
+                        return result;
+                    }
+
+                    // Insertar el parámetro en el contexto de la función
+                    symbol *param_symbol = (symbol *)calloc(1, sizeof(symbol));
+                    param_symbol->id = param_node->id;
+                    param_symbol->dataType = param_value->dataType;
+                    param_symbol->type = "PARAMETER";
+                    param_symbol->value = param_value->value;
+                    param_symbol->environment = ctx_func->nombre;
+                    param_symbol->line = &(current_param->expr->line);
+                    param_symbol->column = &(current_param->expr->column);
+
+                    Symbol_table_insert(ctx_func->symbols_context, param_symbol);
+
+                    param_node = param_node->next;
+                    current_param = current_param->next;
+                    param_index++;
+                }
+
+                if (current_param || param_node)
+                {
+                    result->dataType = "UNDEFINED";
+                    result->value = "Function parameter count mismatch";
+                    return result;
+                }
+            }
+
+            ctx_search = ctx_search->after;
+        }
+
+        if (!func_symbol)
+        {
+
+            result->dataType = "UNDEFINED";
+            result->value = "not implemented yet";
+            return result;
+        }
+
+        InstruccionNode *curr = func_symbol->functionValues->body->head;
+        while (curr)
+        {
+            semantic_analysis_execute(curr->instr, ctx_func);
+            if (strcmp(curr->instr->InstType, "Return") == 0)
+                break;
+            curr = curr->next;
+        }
+
+        if (!ctx_func->return_value)
+        {
+            result->dataType = "UNDEFINED";
+            result->value = "Function did not return a value";
+            return result;
+        }
+
+        Symbol_table_insertContext(SymbolTable_General, ctx_func->symbols_context);
+
+        return ctx_func->return_value;
+        break;
+    }
+
     default:
         fprintf(stderr, "DEBUG: Unknown expression type %s\n", expr->type);
         return NULL;

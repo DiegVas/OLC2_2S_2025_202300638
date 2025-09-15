@@ -32,6 +32,8 @@ typedef enum ExecuteType
     FOR_STATEMENT,
     BREAK_STATEMENT,
     CONTINUE_STATEMENT,
+    RETURN_STATEMENT,
+    VOID_CALL,
     UNKNOWN
 } ExecuteType;
 
@@ -76,6 +78,7 @@ typedef enum ExpressionType
     EXP_INDEXOF,
     EXP_LENGTH,
     EXP_ADD,
+    EXP_FUNCTION_CALL,
     EXP_UNKNOWN
 } ExpressionType;
 

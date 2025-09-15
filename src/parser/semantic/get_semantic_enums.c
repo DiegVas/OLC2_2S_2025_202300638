@@ -22,6 +22,10 @@ ExecuteType get_instruction_type(const char *type_str)
         return BREAK_STATEMENT;
     if (strcmp(type_str, "CONTINUE") == 0)
         return CONTINUE_STATEMENT;
+    if (strcmp(type_str, "RETURN") == 0)
+        return RETURN_STATEMENT;
+    if (strcmp(type_str, "VOID_CALL") == 0)
+        return VOID_CALL;
     return UNKNOWN;
 }
 
@@ -126,5 +130,8 @@ get_expression_type(const char *type_str)
         return EXP_LENGTH;
     if (strcmp(type_str, "ADD") == 0)
         return EXP_ADD;
+    if (strcmp(type_str, "FUNCTION_CALL") == 0)
+        return EXP_FUNCTION_CALL;
+
     return EXP_UNKNOWN;
 }

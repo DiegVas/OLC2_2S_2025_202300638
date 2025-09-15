@@ -27,6 +27,42 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
             // Error: ID ya declarado en este contexto
             return Error_exists("ID ya declarado en este contexto", context->nombre, instruction);
 
+        if (strcmp(instruction->symbolType, "FUNCTION") == 0)
+        {
+            symbol *new_symbol = (symbol *)calloc(1, sizeof(symbol));
+            new_symbol->id = instruction->id;
+            new_symbol->dataType = instruction->type;
+            new_symbol->type = instruction->symbolType;
+            new_symbol->functionValues = instruction->functionData;
+            new_symbol->environment = context->nombre;
+            new_symbol->line = &(instruction->line);
+            new_symbol->column = &(instruction->column);
+
+            fprintf(stderr, "Nuevo símbolo de tipo función: %s, Tipo: %s\n",
+                    new_symbol->id, new_symbol->dataType);
+
+            Symbol_table_insert(symbolTable_C, new_symbol);
+            return;
+        }
+
+        if (strcmp(instruction->symbolType, "VOID") == 0)
+        {
+            fprintf(stderr, "Declaración de función void detectada para ID: %s\n", instruction->id);
+            symbol *new_symbol = (symbol *)calloc(1, sizeof(symbol));
+            new_symbol->id = instruction->id;
+            new_symbol->type = instruction->symbolType;
+            new_symbol->functionValues = instruction->functionData;
+            new_symbol->environment = context->nombre;
+            new_symbol->line = &(instruction->line);
+            new_symbol->column = &(instruction->column);
+
+            fprintf(stderr, "Nuevo símbolo de tipo función: %s, Tipo: %s\n",
+                    new_symbol->id, new_symbol->dataType);
+
+            Symbol_table_insert(symbolTable_C, new_symbol);
+            return;
+        }
+
         if (strcmp(instruction->symbolType, "LIST") == 0)
         {
             fprintf(stderr, "Declaración de lista detectada para ID: %s\n", instruction->id);
@@ -525,7 +561,65 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
 
         break;
     }
+    case RETURN_STATEMENT:
+    {
+        // Manejo de la instrucción RETURN
+        Context *ctx = context;
+        bool found_function = false;
+        while (ctx)
+        {
+            if (strcmp(ctx->nombre, "Function_Call") == 0)
+            {
+                symbol *return_value = evaluate_expression(instruction->value, context);
+                if (strcmp(return_value->dataType, "UNDEFINED") == 0)
+                    return Error_exists(return_value->value, context->nombre, instruction);
+                ctx->return_value = return_value;
+                found_function = true;
+                break;
+            }
+            else if (strcmp(ctx->nombre, "Void_Call") == 0)
+            {
+                found_function = true;
+                break;
+            }
 
+            ctx = ctx->after;
+        }
+
+        if (!found_function)
+            return Error_exists("RETURN fuera de un contexto de función", context->nombre, instruction);
+
+        break;
+    }
+    case VOID_CALL:
+    {
+        fprintf(stderr, "Llamada a función void detectada para ID: %s\n", instruction->id);
+
+        Context *ctx_func = malloc(sizeof(Context));
+        ctx_func->after = context;
+        ctx_func->symbols_context = Symbol_table_create();
+        ctx_func->nombre = "Void_Call";
+
+        symbol *func_symbol = SearchSymbol(context->symbols_context, instruction->id);
+        if (!func_symbol)
+            return Error_exists("ID de función no declarado", context->nombre, instruction);
+
+        if (strcmp(func_symbol->type, "VOID") != 0)
+            return Error_exists("ID no es de tipo función void", context->nombre, instruction);
+
+        InstruccionNode *curr = func_symbol->functionValues->body->head;
+        while (curr)
+        {
+            fprintf(stderr, "Ejecutando instrucción dentro de función void: %s\n", curr->instr->InstType);
+            semantic_analysis_execute(curr->instr, ctx_func);
+            if (strcmp(ctx_func->nombre, "Return") == 0)
+                break;
+
+            curr = curr->next;
+        }
+        Symbol_table_insertContext(SymbolTable_General, ctx_func->symbols_context);
+        break;
+    }
     default:
         fprintf(stderr, "Instrucción no manejada en análisis semántico: %s\n", instruction->InstType);
         break;

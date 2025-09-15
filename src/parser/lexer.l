@@ -204,6 +204,10 @@ BREAK_LINE \n
 
 "add" return ADD;
 
+"return" return RETURN;
+
+"void" return VOID;
+
 "true" {
     yylval.sval = strdup(yytext);
     return BOOLEAN;

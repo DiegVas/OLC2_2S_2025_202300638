@@ -11,6 +11,7 @@ typedef struct List List;
 typedef struct SymbolList SymbolList;
 typedef struct VectorList VectorList;
 typedef struct MatrixList MatrixList;
+typedef struct Function Function;
 
 //* Tabla de simbolos
 
@@ -28,6 +29,7 @@ typedef struct symbol
     List *arrayValues;        // Para muldimensionales
     VectorList *vectorValues; // Para vectores
     MatrixList *matrixValues; // Para matrices
+    Function *functionValues; // Para funciones
     int dimensions;           // Numero de dimensiones del arreglo
 
     int *line;
@@ -54,8 +56,7 @@ typedef struct Context
     struct symbol_table *symbols_context;
     bool continue_instruction;
     bool break_instruction;
-    char *return_type;
-    char *return_value;
+    symbol *return_value;
 
 } Context;
 
@@ -130,6 +131,7 @@ typedef struct Instruccion
     SwitchData *switchData;
     WhileData *whileData;
     ForData *forData;
+    Function *functionData;
     SymbolList *arrayValues;  // Para arreglos
     VectorList *vectorValues; // Para vectores
     MatrixList *matrixValues; // Para matrices
@@ -253,6 +255,24 @@ struct MatrixList
     matrixNode *head;
 };
 
+typedef struct params
+{
+    char *type;
+    char *id;
+    struct params *next;
+} params;
+
+typedef struct paramsList
+{
+    params *head;
+} paramsList;
+
+struct Function
+{
+    paramsList *parameters;
+    InstruccionList *body;
+};
+
 // * --- Estructura ASTNode y lista de hijos ---
 
 typedef struct ASTNode ASTNode;
@@ -315,5 +335,11 @@ void VectorList_addSym(VectorList *list, symbol *sym);
 
 MatrixList *MatrixList_create();
 void MatrixList_add(MatrixList *matrix, VectorList *vectorList);
+
+paramsList *createParamsList();
+void addParam(paramsList *list, char *type, char *id);
+
+// Función para reinicializar el parser
+void reset_parser_state();
 
 #endif // PARSER_H
