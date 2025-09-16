@@ -13,6 +13,13 @@ typedef struct VectorList VectorList;
 typedef struct MatrixList MatrixList;
 typedef struct Function Function;
 
+// Estructura para manejar dimensiones de arreglos
+typedef struct DimensionsList
+{
+    int *dimensions;
+    int count;
+} DimensionsList;
+
 //* Tabla de simbolos
 
 typedef struct symbol
@@ -212,12 +219,13 @@ struct CaseNodeList
 struct ListData
 {
     Expression *exprData;
+    symbol *symData;
     List *listData;
 };
 
 struct ListNode
 {
-    struct ListNode *next;
+    ListNode *next;
     ListData *listData;
 };
 
@@ -338,6 +346,11 @@ void MatrixList_add(MatrixList *matrix, VectorList *vectorList);
 
 paramsList *createParamsList();
 void addParam(paramsList *list, char *type, char *id);
+
+// Funciones para arreglos multidimensionales
+Expression *create_undefined_expression(const char *dataType);
+List *create_multidimensional_list(int *dimensions, int num_dimensions, int current_depth, const char *dataType);
+List *create_multidimensional_array(int *dimensions, int num_dimensions, const char *dataType);
 
 // Función para reinicializar el parser
 void reset_parser_state();

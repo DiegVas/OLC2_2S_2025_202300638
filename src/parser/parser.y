@@ -28,6 +28,7 @@ int yyerror(const char *s);
     typedef struct MatrixList MatrixList;
     typedef struct ExpressionList ExpressionList;
     typedef struct paramsList paramsList;
+    typedef struct DimensionsList DimensionsList;
 }
 
 %locations
@@ -48,6 +49,7 @@ int yyerror(const char *s);
     VectorList* VList;
     MatrixList* MList;
     paramsList* paramlist;
+    DimensionsList* dimlist;
 }
 
 /* Tokens */
@@ -85,7 +87,7 @@ int yyerror(const char *s);
 %type <sval> primitive_types
 %type <expr> primitive_values
 %type <expr> expression;
-%type <exprList> exprList;
+%type <exprList> exprList dimensions_expressions;
 %type <instr> assignment_expression;
 %type <ifdata> IF_STATEMENT
 %type <instrList> ELSE_STATEMENT
@@ -101,6 +103,7 @@ int yyerror(const char *s);
 %type <VList> vectorList
 %type <MList> matrixList
 %type <paramlist> paramsList
+%type <dimlist> dimensions_value_list
 
 
 /* Precedencias y asociatividades */
@@ -132,6 +135,9 @@ int yyerror(const char *s);
 /* Unarios (más alta) */
 %right NOT INCREMENT                 /* ! ++ (prefijo) */
 %right UMINUS                        /* para - unario */
+
+/* Acceso a arrays (más alta precedencia) */
+%left '[' ']'
 
 %%
 
@@ -195,6 +201,16 @@ instruction:
         Instruccion* instP = (Instruccion*)malloc(sizeof(Instruccion));
         instP->InstType = "PRINTLN";
         instP->value = $3;
+        instP->line = @1.first_line;
+        $$ = instP;
+    }
+    | PRINTLN '(' ')' {
+        Instruccion* instP = (Instruccion*)malloc(sizeof(Instruccion));
+        instP->InstType = "PRINTLN";
+        Expression* exp = (Expression*)calloc(1, sizeof(Expression));
+        exp->type = strdup("CHARACTER");
+        exp->value = strdup("\n");
+        instP->value = exp;
         instP->line = @1.first_line;
         $$ = instP;
     }
@@ -524,7 +540,25 @@ declaration:
         instP->arrayValues->values = $5;
         instP->column = @3.first_column;
         instP->symbolType = "LIST";
-        $$ = instP; };
+        $$ = instP; }
+    | primitive_types ID dimensions '=' NEW primitive_types dimensions_value_list {
+        Instruccion* instP = (Instruccion*)malloc(sizeof(Instruccion));
+        instP->id = $2;
+        instP->type = $1;
+        instP->arrayValues = (SymbolList*)calloc(1, sizeof(SymbolList));
+        instP->arrayValues->dimension = $3;
+        
+        // Usar la función multidimensional para crear la estructura
+        instP->arrayValues->values = create_multidimensional_array($7->dimensions, $7->count, $6);
+        
+        // Liberar la estructura temporal
+        free($7->dimensions);
+        free($7);
+        
+        instP->column = @3.first_column;
+        instP->symbolType = "LIST";
+        $$ = instP; 
+    }
 
 //* Tipos primitivos
 
@@ -824,6 +858,15 @@ expression:
         exp->right = $6;
         $$ = exp;
     }
+    //* ID[][]......
+    | ID dimensions_expressions {
+        fprintf(stderr,"Dimensiones de acceso");
+        Expression* exp = (Expression*)calloc(1, sizeof(Expression));
+        exp->type = "ARRAY_ACCESS";
+        exp->value = $1;
+        exp->list = $2;
+        $$ = exp;
+    }
     //* id(params)
     | ID '(' exprList ')' {
         Expression* exp = (Expression*)calloc(1, sizeof(Expression));
@@ -949,11 +992,35 @@ FOR_STATEMENT:
     };
 //* Manejo de Arreglos
 
-
-
 dimensions
     : /* empty */ { $$ = 0; }
     | dimensions '[' ']' { $$ = $1 + 1; };
+
+dimensions_value_list
+    : '[' NUM ']' { 
+        DimensionsList* dimList = (DimensionsList*)malloc(sizeof(DimensionsList));
+        dimList->dimensions = (int*)malloc(sizeof(int));
+        dimList->dimensions[0] = atoi($2);
+        dimList->count = 1;
+        $$ = dimList;
+    }
+    | dimensions_value_list '[' NUM ']' { 
+        $1->dimensions = (int*)realloc($1->dimensions, sizeof(int) * ($1->count + 1));
+        $1->dimensions[$1->count] = atoi($3);
+        $1->count += 1;
+        $$ = $1;
+    };
+
+dimensions_expressions:
+    '[' expression ']' { 
+        ExpressionList* exprList = create_expression_list();
+        ExpressionList_add(exprList, $2);
+        $$ = exprList;
+    }
+    | dimensions_expressions '[' expression ']' {
+        ExpressionList_add($1, $3);
+        $$ = $1;
+     }
 
 //? Vectores
 vectorList

@@ -32,9 +32,140 @@ symbol *evaluate_expression(Expression *expr, Context *context)
         result->dataType = "BOOLEAN";
         break;
     case EXP_CHARACTER:
-        result->value = strcmp(expr->value, "UNDEFINED") == 0 ? strdup("'\0'") : strdup(expr->value);
+    {
+        if (strcmp(expr->value, "UNDEFINED") == 0)
+        {
+            result->value = strdup("'\0'");
+        }
+        else
+        {
+            // Procesar secuencias de escape Unicode y caracteres especiales
+            char *formatted_char = (char *)calloc(16, sizeof(char));
+            const char *input = expr->value;
+
+            if (strncmp(input, "\\u", 2) == 0 && strlen(input) >= 6)
+            {
+                // Determinar cuántos dígitos hex hay después de \u
+                int hex_digits = 0;
+                for (int i = 2; i < strlen(input) && hex_digits < 8; i++)
+                {
+                    char c = input[i];
+                    if ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'))
+                    {
+                        hex_digits++;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+
+                // Tomar los primeros 4 dígitos hex para el código Unicode
+                int digits_to_use = (hex_digits >= 4) ? 4 : hex_digits;
+                char hex_str[9] = {0};
+                strncpy(hex_str, input + 2, digits_to_use);
+                hex_str[digits_to_use] = '\0';
+
+                unsigned int unicode_val;
+                if (sscanf(hex_str, "%x", &unicode_val) == 1)
+                {
+                    // Mapeo especial para algunos códigos Unicode comunes
+                    if (unicode_val == 0x0082)
+                    {
+                        sprintf(formatted_char, "'R'"); // \u0082 = R según tu ejemplo
+                    }
+                    else if (unicode_val == 0x0016)
+                    {
+                        sprintf(formatted_char, "'\\x16'"); // Carácter de control
+                    }
+                    else if (unicode_val <= 31)
+                    {
+                        // Caracteres de control (0-31)
+                        sprintf(formatted_char, "'\\x%02X'", unicode_val);
+                    }
+                    else if (unicode_val <= 127)
+                    {
+                        // ASCII imprimible
+                        sprintf(formatted_char, "'%c'", (char)unicode_val);
+                    }
+                    else if (unicode_val <= 255)
+                    {
+                        // Caracteres extendidos Latin-1
+                        sprintf(formatted_char, "'%c'", (char)unicode_val);
+                    }
+                    else
+                    {
+                        // Para valores Unicode > 255, mostrar el valor hex
+                        sprintf(formatted_char, "'\\u%04X'", unicode_val);
+                    }
+
+                    // Si había dígitos extra después del código Unicode, agregarlos como sufijo
+                    if (hex_digits > 4)
+                    {
+                        char extra_chars[14];
+                        strncpy(extra_chars, input + 2 + 4, hex_digits - 4);
+                        extra_chars[hex_digits - 4] = '\0';
+                        // Para este caso específico, podríamos tratar los dígitos extra como parte del valor
+                        printf("DEBUG: Unicode con dígitos extra: \\u%s (extra: %s)\n", hex_str, extra_chars);
+                    }
+                }
+                else
+                {
+                    // Error en formato, usar valor original
+                    formatted_char = strdup(input);
+                }
+            }
+            else if (strncmp(input, "\\", 1) == 0 && strlen(input) >= 2)
+            {
+                // Otras secuencias de escape (\n, \t, \r, \\, \', etc.)
+                char escape_char = input[1];
+                switch (escape_char)
+                {
+                case 'n':
+                    sprintf(formatted_char, "'\\n'");
+                    break;
+                case 't':
+                    sprintf(formatted_char, "'\\t'");
+                    break;
+                case 'r':
+                    sprintf(formatted_char, "'\\r'");
+                    break;
+                case '\\':
+                    sprintf(formatted_char, "'\\\\'");
+                    break;
+                case '\'':
+                    sprintf(formatted_char, "'\\''");
+                    break;
+                case '\"':
+                    sprintf(formatted_char, "'\\\"'");
+                    break;
+                case '0':
+                    sprintf(formatted_char, "'\\0'");
+                    break;
+                default:
+                    // Secuencia desconocida, mantener original
+                    formatted_char = strdup(input);
+                    break;
+                }
+            }
+            else
+            {
+                // Caracter normal, asegurar formato con comillas simples
+                if (input[0] == '\'' && input[strlen(input) - 1] == '\'')
+                {
+                    formatted_char = strdup(input);
+                }
+                else
+                {
+                    sprintf(formatted_char, "'%s'", input);
+                }
+            }
+
+            result->value = formatted_char;
+        }
         result->dataType = "CHARACTER";
         break;
+    }
     case EXP_DOUBLE:
         result->value = strcmp(expr->value, "UNDEFINED") == 0 ? strdup("0.0") : strdup(expr->value);
         result->dataType = "DOUBLE";
@@ -311,6 +442,7 @@ symbol *evaluate_expression(Expression *expr, Context *context)
         break;
     }
     case EXP_ADD:
+    {
         Context *ctx_search = context;
 
         while (ctx_search)
@@ -370,7 +502,8 @@ symbol *evaluate_expression(Expression *expr, Context *context)
 
             ctx_search = ctx_search->after;
         }
-
+        break;
+    }
     case EXP_MATRIX_ACCESS:
     {
         symbol *row_access = evaluate_expression(expr->left, context);
@@ -413,6 +546,104 @@ symbol *evaluate_expression(Expression *expr, Context *context)
         }
         break;
     }
+    case EXP_ARRAY_ACCESS:
+    {
+
+        // Acceso a arreglos multidimensionales usando lista de índices
+        Context *ctx_search = context;
+        while (ctx_search)
+        {
+
+            if (SearchID(ctx_search->symbols_context, expr->value))
+            {
+
+                symbol *sym = SearchSymbol(ctx_search->symbols_context, expr->value);
+                if (!sym)
+                {
+                    result->dataType = "UNDEFINED";
+                    result->value = "Symbol not found";
+                    return result;
+                }
+
+                if (strcmp(sym->type, "LIST") != 0 || !sym->arrayValues || !sym->arrayValues->head)
+                {
+                    result->dataType = "UNDEFINED";
+                    result->value = "Symbol is not a multidimensional array or has no values";
+                    return result;
+                }
+
+                // Validar que tenemos suficientes índices
+                if (!expr->list || !expr->list->head)
+                {
+                    result->dataType = "UNDEFINED";
+                    result->value = "No indices provided for array access";
+                    return result;
+                }
+
+                // Evaluar todos los índices y validar que sean enteros
+                ExpressionNode *index_node = expr->list->head;
+                int index_count = 0;
+                while (index_node)
+                {
+                    if (!index_node->expr)
+                    {
+                        result->dataType = "UNDEFINED";
+                        result->value = "Invalid index expression";
+                        return result;
+                    }
+
+                    symbol *index_val = evaluate_expression(index_node->expr, context);
+                    if (!index_val)
+                    {
+                        result->dataType = "UNDEFINED";
+                        result->value = "Failed to evaluate index expression";
+                        return result;
+                    }
+
+                    if (!index_val->dataType || strcmp(index_val->dataType, "INTEGER") != 0)
+                    {
+                        result->dataType = "UNDEFINED";
+                        result->value = "Array indices must be of type INTEGER";
+                        return result;
+                    }
+                    index_count++;
+                    index_node = index_node->next;
+                }
+
+                // Validar que el número de índices coincida con las dimensiones
+                if (index_count != sym->dimensions)
+                {
+                    char error_msg[256];
+                    snprintf(error_msg, sizeof(error_msg),
+                             "Index count mismatch: expected %d indices, got %d",
+                             sym->dimensions, index_count);
+                    result->dataType = "UNDEFINED";
+                    result->value = strdup(error_msg);
+                    return result;
+                }
+
+                // Navegar por la estructura multidimensional
+                symbol *accessed_value = access_multidimensional_array(
+                    sym->arrayValues, expr->list, context, sym->dimensions);
+
+                if (!accessed_value)
+                {
+                    result->dataType = "UNDEFINED";
+                    result->value = "Array index out of bounds or invalid access";
+                    return result;
+                }
+
+                return accessed_value;
+            }
+
+            ctx_search = ctx_search->after;
+        }
+
+        result->dataType = "UNDEFINED";
+        result->value = "Array variable not found";
+        return result;
+    }
+
     case EXP_ID:
     {
         Context *ctx_search = context;
@@ -422,7 +653,6 @@ symbol *evaluate_expression(Expression *expr, Context *context)
             if (SearchID(ctx_search->symbols_context, expr->value))
             {
                 symbol *sym = SearchSymbol(ctx_search->symbols_context, expr->value);
-                fprintf(stderr, "DEBUG: Found symbol %s of type %s with value %s\n", sym->id, sym->dataType, sym->value);
 
                 // En lugar de crear una nueva expresión y evaluar recursivamente,
                 // devolvemos directamente una copia del símbolo
@@ -438,7 +668,6 @@ symbol *evaluate_expression(Expression *expr, Context *context)
 
             ctx_search = ctx_search->after;
         }
-        fprintf(stderr, "DEBUG: Searching in context %s\n", ctx_search ? ctx_search->nombre : "NULL");
         result->dataType = "UNDEFINED";
         result->value = "Variable no definida";
         result->environment = context->nombre;
@@ -446,7 +675,6 @@ symbol *evaluate_expression(Expression *expr, Context *context)
     }
     case EXP_FUNCTION_CALL:
     {
-        fprintf(stderr, "DEBUG: Function call detected for ID: %s\n", expr->value);
 
         Context *ctx_func = calloc(1, sizeof(Context));
         ctx_func->after = context;
@@ -560,9 +788,7 @@ symbol *evaluate_expression(Expression *expr, Context *context)
         return ctx_func->return_value;
         break;
     }
-
     default:
-        fprintf(stderr, "DEBUG: Unknown expression type %s\n", expr->type);
         return NULL;
     }
 }

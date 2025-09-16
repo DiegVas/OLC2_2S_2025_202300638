@@ -232,3 +232,212 @@ symbol *get_legth_of_vector(VectorList *vector)
     sprintf(result->value, "%d", count);
     return result;
 }
+
+// Función recursiva para acceder a arreglos multidimensionales
+symbol *access_multidimensional_array(List *array, ExpressionList *indices, Context *context, int expected_dimensions)
+{
+    symbol *result = (symbol *)calloc(1, sizeof(symbol));
+
+    if (!array || !indices || !indices->head)
+    {
+
+        return result;
+    }
+
+    // Evaluar el primer índice
+    ExpressionNode *current_index = indices->head;
+    if (!current_index || !current_index->expr)
+    {
+        result->dataType = "UNDEFINED";
+        result->value = strdup("current_index or expr is NULL");
+
+        return result;
+    }
+
+    symbol *index_symbol = evaluate_expression(current_index->expr, context);
+    if (!index_symbol)
+    {
+        result->dataType = "UNDEFINED";
+        result->value = strdup("evaluate_expression returned NULL");
+
+        return result;
+    }
+
+    if (!index_symbol->dataType || strcmp(index_symbol->dataType, "INTEGER") != 0)
+    {
+        result->dataType = "UNDEFINED";
+        result->value = strdup("Index must be of type INTEGER");
+
+        return result;
+    }
+
+    if (!index_symbol->value)
+    {
+        result->dataType = "UNDEFINED";
+        result->value = strdup("Index value is NULL");
+        return result;
+    }
+
+    int index = atoi(index_symbol->value);
+
+    // Contar elementos en la lista actual
+    ListNode *current_node = array->head;
+    int list_size = 0;
+    while (current_node)
+    {
+        list_size++;
+        current_node = current_node->next;
+    }
+
+    // Validar que el índice esté en rango
+    if (index < 0 || index >= list_size)
+    {
+        // Error_exists("Array index out of bounds", context ? context->nombre : "Unknown", NULL);
+        result->dataType = "UNDEFINED";
+        result->value = strdup("Array index out of bounds");
+
+        return result;
+    }
+
+    // Navegar al elemento en la posición index
+    current_node = array->head;
+    for (int i = 0; i < index && current_node; i++)
+    {
+        current_node = current_node->next;
+    }
+
+    if (!current_node)
+    {
+        result->dataType = "UNDEFINED";
+        result->value = strdup("current_node is NULL after navigation");
+
+        return result;
+    }
+
+    if (!current_node->listData)
+    {
+        result->dataType = "UNDEFINED";
+        result->value = strdup("current_node is NULL after navigation");
+
+        return result;
+    }
+
+    ListData *current_data = current_node->listData;
+
+    // Si este es el último índice
+    if (!current_index->next)
+    {
+
+        // Debemos estar en una expresión final, no en otra lista
+        if (current_data->exprData)
+        {
+
+            if (!result)
+            {
+                result->dataType = "UNDEFINED";
+                result->value = strdup("Error allocating result");
+
+                return result;
+            }
+
+            result->dataType = current_data->exprData->type ? strdup(current_data->exprData->type) : strdup("UNDEFINED");
+            result->value = current_data->exprData->value ? strdup(current_data->exprData->value) : strdup("NULL");
+            result->type = strdup("VARIABLE");
+            result->environment = context && context->nombre ? strdup(context->nombre) : strdup("Unknown");
+
+            return result;
+        }
+        else if (current_data->listData)
+        {
+            // Error: todavía hay más dimensiones pero no más índices
+            result->dataType = "UNDEFINED";
+            result->value = strdup("Array index out of bounds");
+
+            return result;
+        }
+        else if (current_data->symData)
+        {
+
+            // Retornar el símbolo directamente
+            symbol *result = (symbol *)calloc(1, sizeof(symbol));
+            if (!result)
+            {
+                result->dataType = "UNDEFINED";
+                result->value = strdup("Error allocating result");
+
+                return result;
+            }
+
+            result->dataType = current_data->symData->dataType ? strdup(current_data->symData->dataType) : strdup("UNDEFINED");
+            result->value = current_data->symData->value ? strdup(current_data->symData->value) : strdup("NULL");
+            result->type = current_data->symData->type ? strdup(current_data->symData->type) : strdup("VARIABLE");
+            result->id = current_data->symData->id ? strdup(current_data->symData->id) : strdup("element");
+            result->environment = context && context->nombre ? strdup(context->nombre) : strdup("Unknown");
+
+            return result;
+        }
+        else
+        {
+        }
+    }
+    else
+    {
+
+        // Hay más índices, debemos continuar navegando
+        if (current_data->listData)
+        {
+
+            // Crear una nueva lista de índices sin el primer elemento
+            ExpressionList *remaining_indices = create_expression_list();
+            if (!remaining_indices)
+            {
+                // Error_exists("Memory allocation error for remaining indices", context ? context->nombre : "Unknown", NULL);
+                result->dataType = "UNDEFINED";
+                result->value = strdup("Error allocating remaining indices");
+                return result;
+            }
+
+            ExpressionNode *next_index = current_index->next;
+            while (next_index)
+            {
+                if (next_index->expr) // Validación adicional
+                {
+                    ExpressionList_add(remaining_indices, next_index->expr);
+                }
+                next_index = next_index->next;
+            }
+
+            // Llamada recursiva con la sublista y los índices restantes
+            symbol *recursive_result = access_multidimensional_array(
+                current_data->listData,
+                remaining_indices,
+                context,
+                expected_dimensions - 1);
+
+            // Liberar la lista temporal de índices de manera segura
+            if (remaining_indices)
+            {
+                ExpressionNode *current_node = remaining_indices->head;
+                while (current_node)
+                {
+                    ExpressionNode *next_node = current_node->next;
+                    free(current_node); // Solo liberamos el nodo, no la expresión
+                    current_node = next_node;
+                }
+                free(remaining_indices);
+            }
+
+            return recursive_result;
+        }
+        else
+        {
+            // Error: tenemos más índices pero no más dimensiones
+            result->dataType = "UNDEFINED";
+            result->value = strdup("Array index out of bounds");
+
+            return result;
+        }
+    }
+
+    return NULL;
+}

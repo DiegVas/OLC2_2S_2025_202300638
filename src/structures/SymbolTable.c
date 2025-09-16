@@ -17,6 +17,7 @@ bool SearchID(symbol_table *table, char *id)
     {
         if (strcmp(current->data->id, id) == 0)
         {
+            fprintf(stderr, "ID encontrado en la tabla de símbolos: %s\n", id);
             return true; // ID encontrado
         }
         current = current->next;

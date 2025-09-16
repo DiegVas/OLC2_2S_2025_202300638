@@ -16,7 +16,8 @@ List *evaluate_list(List *list, Context *evaluateContext)
         if (data->exprData)
         {
             symbol *da = evaluate_expression(data->exprData, evaluateContext);
-            fprintf(stderr, "Evaluated list expression: Type=%s, Value=%s\n", da->dataType, da->value);
+            data->symData = da;
+            data->exprData = NULL; // Clear exprData after evaluation
         }
 
         List_add(evaluated_list, data);
@@ -24,6 +25,37 @@ List *evaluate_list(List *list, Context *evaluateContext)
     }
 
     return evaluated_list;
+}
+
+char *printArray(List *list)
+{
+    char *result = (char *)calloc(1024, sizeof(char));
+    strcat(result, "[");
+
+    ListNode *current = list->head;
+    while (current)
+    {
+        ListData *data = current->listData;
+        if (data->symData)
+        {
+            strcat(result, data->symData->value);
+        }
+        else if (data->listData)
+        {
+            char *nested_array_str = printArray(data->listData);
+            strcat(result, nested_array_str);
+            free(nested_array_str);
+        }
+
+        if (current->next)
+        {
+            strcat(result, ", ");
+        }
+        current = current->next;
+    }
+
+    strcat(result, "]");
+    return result;
 }
 
 VectorList *evaluate_vector(char *dataType, VectorList *vec, Context *evaluateContext)

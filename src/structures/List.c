@@ -1,4 +1,5 @@
 #include "parser.h"
+#include <string.h>
 
 //* Para vectores
 
@@ -121,4 +122,71 @@ void List_destroy(List *list)
         free(temp);
     }
     free(list);
+}
+
+// Función para crear una expresión UNDEFINED
+Expression *create_undefined_expression(const char *dataType)
+{
+    Expression *expr = (Expression *)calloc(1, sizeof(Expression));
+    expr->type = strdup(dataType);
+    expr->value = strdup("UNDEFINED");
+    expr->line = 0;
+    expr->column = 0;
+    expr->left = NULL;
+    expr->right = NULL;
+    expr->list = NULL;
+    return expr;
+}
+
+// Función recursiva para crear listas multidimensionales
+List *create_multidimensional_list(int *dimensions, int num_dimensions, int current_depth, const char *dataType)
+{
+    if (current_depth >= num_dimensions)
+    {
+        return NULL; // No más dimensiones
+    }
+
+    List *list = List_create();
+    int current_dimension_size = dimensions[current_depth];
+
+    for (int i = 0; i < current_dimension_size; i++)
+    {
+        ListData *listData = (ListData *)calloc(1, sizeof(ListData));
+
+        if (current_depth == num_dimensions - 1)
+        {
+            // Última dimensión: crear expresiones UNDEFINED
+            listData->exprData = create_undefined_expression(dataType);
+            listData->symData = NULL;
+            listData->listData = NULL;
+        }
+        else
+        {
+            // Dimensiones intermedias: crear sublistas recursivamente
+            listData->exprData = NULL;
+            listData->symData = NULL;
+            listData->listData = create_multidimensional_list(dimensions, num_dimensions, current_depth + 1, dataType);
+        }
+
+        List_add(list, listData);
+    }
+
+    return list;
+}
+
+// Función wrapper para crear arreglos multidimensionales
+List *create_multidimensional_array(int *dimensions, int num_dimensions, const char *dataType)
+{
+    if (!dimensions || num_dimensions <= 0)
+    {
+        return NULL;
+    }
+
+    printf("DEBUG: Creando arreglo multidimensional con %d dimensiones de tipo %s\n", num_dimensions, dataType);
+    for (int i = 0; i < num_dimensions; i++)
+    {
+        printf("DEBUG: Dimensión %d: tamaño %d\n", i, dimensions[i]);
+    }
+
+    return create_multidimensional_list(dimensions, num_dimensions, 0, dataType);
 }

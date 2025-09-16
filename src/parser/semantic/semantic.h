@@ -1,6 +1,35 @@
 #include "../structures/parser.h"
 #include <string.h>
 
+// === AST Dinámico Simplificado ===
+typedef enum
+{
+    AST_LITERAL,
+    AST_IDENTIFIER,
+    AST_BINARY_OP,
+    AST_UNARY_OP,
+    AST_ROOT_INSTR,
+    AST_UNKNOWN
+} SimpleASTKind;
+
+typedef struct SimpleASTNode
+{
+    SimpleASTKind kind;
+    char *repr;     // operador, literal, id
+    char *dataType; // inferencia opcional
+    struct SimpleASTNode *left;
+    struct SimpleASTNode *right;
+    struct SimpleASTNode *next; // para listas lineales de instrucciones
+} SimpleASTNode;
+
+SimpleASTNode *ast_new(SimpleASTKind kind, const char *repr, const char *dtype);
+SimpleASTNode *ast_build_expression(Expression *expr);
+SimpleASTNode *ast_append_instruction(SimpleASTNode *list, SimpleASTNode *node);
+void ast_free(SimpleASTNode *node);
+void ast_print(SimpleASTNode *root, int indent, FILE *out);
+const char *get_ast_report();
+extern SimpleASTNode *AST_ROOT_GLOBAL;
+
 void semantic_analysis();
 void semantic_analysis_execute(Instruccion *instruction, Context *context);
 
@@ -79,6 +108,7 @@ typedef enum ExpressionType
     EXP_LENGTH,
     EXP_ADD,
     EXP_FUNCTION_CALL,
+    EXP_ARRAY_ACCESS,
     EXP_UNKNOWN
 } ExpressionType;
 
@@ -99,7 +129,10 @@ ExecuteType get_instruction_type(const char *type_str);
 OperativeType get_operativeType(const char *type_str);
 ExpressionType
 get_expression_type(const char *type_str);
+
 List *evaluate_list(List *list, Context *evaluateContext);
+char *printArray(List *list);
+
 VectorList *evaluate_vector(char *dataType, VectorList *vec, Context *evaluateContext);
 char *printVector(VectorList *vec);
 
@@ -109,3 +142,4 @@ symbol **get_VectorElementPointer(Context *context, Expression *index_exp, Vecto
 symbol **get_MatrixElementPointer(Context *context, Expression *row_exp, Expression *col_exp, MatrixList *matrix);
 
 symbol *get_legth_of_vector(VectorList *vector);
+symbol *access_multidimensional_array(List *array, ExpressionList *indices, Context *context, int expected_dimensions);

@@ -132,6 +132,8 @@ get_expression_type(const char *type_str)
         return EXP_ADD;
     if (strcmp(type_str, "FUNCTION_CALL") == 0)
         return EXP_FUNCTION_CALL;
+    if (strcmp(type_str, "ARRAY_ACCESS") == 0)
+        return EXP_ARRAY_ACCESS;
 
     return EXP_UNKNOWN;
 }

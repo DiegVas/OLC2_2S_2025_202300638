@@ -60,8 +60,9 @@ extern int yydebug;
     typedef struct MatrixList MatrixList;
     typedef struct ExpressionList ExpressionList;
     typedef struct paramsList paramsList;
+    typedef struct DimensionsList DimensionsList;
 
-#line 65 "build/parser.tab.h"
+#line 66 "build/parser.tab.h"
 
 /* Token kinds.  */
 #ifndef YYTOKENTYPE
@@ -143,7 +144,7 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 35 "src/parser/parser.y"
+#line 36 "src/parser/parser.y"
 
     char* sval;
     int ival;
@@ -160,8 +161,9 @@ union YYSTYPE
     VectorList* VList;
     MatrixList* MList;
     paramsList* paramlist;
+    DimensionsList* dimlist;
 
-#line 165 "build/parser.tab.h"
+#line 167 "build/parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

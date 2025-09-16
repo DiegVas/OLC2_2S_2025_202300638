@@ -68,6 +68,22 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
             fprintf(stderr, "Declaración de lista detectada para ID: %s\n", instruction->id);
             List *list_values = instruction->arrayValues->values;
             list_values = evaluate_list(list_values, context);
+            // Insertar el nuevo símbolo en la tabla de símbolos del contexto actual
+            symbol *new_symbol = (symbol *)calloc(1, sizeof(symbol));
+            new_symbol->value = printArray(list_values);
+            new_symbol->dataType = instruction->type;
+            new_symbol->type = instruction->symbolType;
+            new_symbol->id = instruction->id;
+            new_symbol->environment = context->nombre;
+            new_symbol->line = &(instruction->line);
+            new_symbol->column = &(instruction->column);
+            new_symbol->arrayValues = list_values;
+            new_symbol->dimensions = instruction->arrayValues->dimension;
+
+            fprintf(stderr, "Nuevo array: %s, Tipo: %s, Valor: %s\n",
+                    new_symbol->id, new_symbol->dataType, new_symbol->value);
+
+            Symbol_table_insert(symbolTable_C, new_symbol);
             return;
         }
 
@@ -135,7 +151,15 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
             return;
         }
 
+        fprintf(stderr, "Declaración de variable detectada para ID: %s\n", instruction->id);
+
         symbol *evaluated_value = evaluate_expression(instruction->value, context);
+        // Validar que la evaluación no retornó NULL
+        if (!evaluated_value)
+        {
+            Error_exists("Expression evaluation failed", context->nombre, instruction);
+            return;
+        }
 
         evaluated_value = apply_casting_auto(evaluated_value, instruction->type);
 
@@ -180,6 +204,14 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
         fprintf(stderr, "Instrucción de asignación detectada para ID: %s\n", instruction->id);
 
         symbol *evaluated_assign = evaluate_expression(instruction->value, context);
+
+        // Validar que la evaluación no retornó NULL
+        if (!evaluated_assign)
+        {
+            Error_exists("Assignment expression evaluation failed", context->nombre, instruction);
+            return;
+        }
+
         if (strcmp(evaluated_assign->dataType, "UNDEFINED") == 0)
             //! Error: Evaluación de expresión fallida
             return Error_exists(evaluated_assign->value, context->nombre, instruction);
@@ -278,6 +310,13 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
     {
         symbol *print_value = evaluate_expression(instruction->value, context);
 
+        // Validar que la evaluación no retornó NULL
+        if (!print_value)
+        {
+            Error_exists("Print expression evaluation failed", context->nombre, instruction);
+            return;
+        }
+
         if (strcmp(print_value->dataType, "UNDEFINED") == 0)
             return Error_exists(print_value->value, context->nombre, instruction);
 
@@ -323,8 +362,6 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
                 semantic_analysis_execute(curr->instr, ctx_if);
                 if (strcmp(curr->instr->InstType, "RETURN") == 0)
                     break;
-
-                semantic_analysis_execute(curr->instr, ctx_if);
                 curr = curr->next;
             }
         }
@@ -358,6 +395,7 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
 
             if (!executed_elseif && else_block)
             {
+                fprintf(stderr, "Ejecutando bloque ELSE if\n");
                 InstruccionNode *curr = else_block->head;
                 while (curr)
                 {
