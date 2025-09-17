@@ -294,32 +294,12 @@ struct Function
     InstruccionList *body;
 };
 
-// * --- Estructura ASTNode y lista de hijos ---
-
-typedef struct ASTNode ASTNode;
-
-typedef struct ASTNodeList
-{
-    ASTNode *node;
-    struct ASTNodeList *next;
-} ASTNodeList;
-
-struct ASTNode
-{
-    char *id;
-    char *label;
-    ASTNodeList *children;
-};
-
 //* Prototipos de funciones
 InstruccionList *InstruccionList_create();
 void InstruccionList_print(InstruccionList *list);
 void InstruccionList_insert(InstruccionList *list, Instruccion *instr);
 InstruccionList *InstruccionList_add(InstruccionList *list, Instruccion *instr);
 void InstruccionList_destroy(InstruccionList *list);
-
-void ASTNode_addChild(ASTNode *parent, ASTNode *child);
-void ASTNode_destroy(ASTNode *node);
 
 ErrorList *createErrorList();
 void ErrorList_destroy(ErrorList *list);

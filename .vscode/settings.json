@@ -6,6 +6,7 @@
     "semantic.h": "c",
     "string.h": "c",
     "stdlib.h": "c",
-    "ast.h": "c"
+    "ast.h": "c",
+    "uuid.h": "c"
   }
 }

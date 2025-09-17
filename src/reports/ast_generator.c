@@ -1,28 +1,62 @@
 #include "ast.h"
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
 
-// Función para generar un AST de ejemplo con datos aleatorios
-void generate_random_ast()
+// Contador global para IDs únicos
+static int node_counter = 0;
+
+// Función para crear un nuevo nodo AST
+ASTVal *create_ast_node(const char *value)
 {
-    // Inicializar semilla para números aleatorios
-    srand(time(NULL));
+    ASTVal *node = malloc(sizeof(ASTVal));
+    node->id = malloc(20);
+    sprintf(node->id, "node%d", node_counter++);
+    node->value = malloc(strlen(value) + 1);
+    strcpy(node->value, value);
+    node->children = malloc(sizeof(ASTList));
+    node->children->head = NULL;
+    return node;
+}
 
-    // Arrays con nombres de nodos de ejemplo
-    const char *node_types[] = {
-        "Programa", "Bloque", "Declaracion", "Asignacion", "Expresion",
-        "IfStatement", "WhileLoop", "ForLoop", "FunctionCall", "Variable",
-        "Literal", "BinaryOp", "UnaryOp", "Array", "Objeto",
-        "Clase", "Metodo", "Parametro", "Return", "Print"};
+// Función para agregar un hijo a un nodo
+void add_child(ASTVal *parent, ASTVal *child)
+{
+    ASTNode *new_node = malloc(sizeof(ASTNode));
+    new_node->value = child;
+    new_node->next = parent->children->head;
+    parent->children->head = new_node;
+}
 
-    const char *operators[] = {"+", "-", "*", "/", "=", "==", "!=", "<", ">", "<=", ">="};
-    const char *literals[] = {"42", "3.14", "true", "false", "\"Hola\"", "\"Mundo\"", "100", "0"};
-    const char *variables[] = {"x", "y", "z", "contador", "suma", "resultado", "temp", "valor"};
+// Función recursiva para recorrer y generar el DOT
+void recorrer_nodo(FILE *dot_file, ASTVal *nodo, char *nodos_str, char *conexiones_str)
+{
+    if (!nodo)
+        return;
 
-    int num_node_types = sizeof(node_types) / sizeof(node_types[0]);
-    int num_operators = sizeof(operators) / sizeof(operators[0]);
-    int num_literals = sizeof(literals) / sizeof(literals[0]);
-    int num_variables = sizeof(variables) / sizeof(variables[0]);
+    // Agregar definición del nodo
+    char nodo_def[256];
+    sprintf(nodo_def, "%s [label=\"%s\"];\n", nodo->id, nodo->value);
+    strcat(nodos_str, nodo_def);
 
-    // Crear archivo .dot
+    // Recorrer hijos
+    ASTNode *current = nodo->children->head;
+    while (current)
+    {
+        // Agregar conexión
+        char conexion[256];
+        sprintf(conexion, "%s -> %s;\n", nodo->id, current->value->id);
+        strcat(conexiones_str, conexion);
+
+        // Recorrer recursivamente
+        recorrer_nodo(dot_file, current->value, nodos_str, conexiones_str);
+        current = current->next;
+    }
+}
+
+// Función para generar DOT desde un nodo raíz
+void generar_dot(ASTVal *root)
+{
     FILE *dot_file = fopen("reports/ast.dot", "w");
     if (!dot_file)
     {
@@ -31,83 +65,25 @@ void generate_random_ast()
     }
 
     fprintf(dot_file, "digraph AST {\n");
-    fprintf(dot_file, "    rankdir=TB;\n");
-    fprintf(dot_file, "    node [shape=box, style=filled, fontname=\"Arial\"];\n");
-    fprintf(dot_file, "    edge [color=blue];\n");
-    fprintf(dot_file, "    \n");
+    fprintf(dot_file, "node [shape=box];\n");
 
-    // Generar ID único basado en tiempo para mostrar que se actualiza
-    int random_id = rand() % 1000;
+    // Buffers para almacenar nodos y conexiones
+    char *nodos_str = malloc(4096);
+    char *conexiones_str = malloc(4096);
+    nodos_str[0] = '\0';
+    conexiones_str[0] = '\0';
 
-    // Crear nodo raíz
-    fprintf(dot_file, "    node0 [label=\"Programa\\nID: %d\", fillcolor=lightblue];\n", random_id);
+    recorrer_nodo(dot_file, root, nodos_str, conexiones_str);
 
-    // Generar estructura de AST aleatorio
-    int node_id = 1;
-    int max_nodes = 15 + rand() % 10; // Entre 15 y 25 nodos
-
-    for (int i = 1; i < max_nodes; i++)
-    {
-        int node_type = rand() % num_node_types;
-        const char *color;
-        const char *label;
-
-        // Asignar colores según el tipo de nodo
-        switch (rand() % 6)
-        {
-        case 0:
-            color = "lightgreen";
-            break;
-        case 1:
-            color = "lightcoral";
-            break;
-        case 2:
-            color = "lightyellow";
-            break;
-        case 3:
-            color = "lightpink";
-            break;
-        case 4:
-            color = "lightcyan";
-            break;
-        default:
-            color = "lightgray";
-            break;
-        }
-
-        // Generar etiqueta del nodo
-        if (strstr(node_types[node_type], "Op"))
-        {
-            label = operators[rand() % num_operators];
-        }
-        else if (strcmp(node_types[node_type], "Literal") == 0)
-        {
-            label = literals[rand() % num_literals];
-        }
-        else if (strcmp(node_types[node_type], "Variable") == 0)
-        {
-            label = variables[rand() % num_variables];
-        }
-        else
-        {
-            label = node_types[node_type];
-        }
-
-        fprintf(dot_file, "    node%d [label=\"%s\", fillcolor=%s];\n", i, label, color);
-
-        // Conectar con nodo padre (distribución aleatoria)
-        int parent = rand() % i;
-        fprintf(dot_file, "    node%d -> node%d;\n", parent, i);
-    }
-
-    // Agregar algunos nodos especiales
-    fprintf(dot_file, "    node%d [label=\"Random: %d\", fillcolor=orange];\n", max_nodes, rand() % 100);
-    fprintf(dot_file, "    node0 -> node%d;\n", max_nodes);
-
+    fprintf(dot_file, "%s", nodos_str);
+    fprintf(dot_file, "%s", conexiones_str);
     fprintf(dot_file, "}\n");
+
+    free(nodos_str);
+    free(conexiones_str);
     fclose(dot_file);
 
-    // Generar imagen PNG usando dot (Graphviz)
+    // Generar imagen PNG
     char command[512];
     snprintf(command, sizeof(command), "dot -Tpng reports/ast.dot -o reports/ast.png");
 
@@ -121,4 +97,24 @@ void generate_random_ast()
         printf("⚠ Advertencia: No se pudo generar la imagen PNG. ¿Está instalado Graphviz?\n");
         printf("  Instalar con: sudo apt-get install graphviz\n");
     }
+}
+
+// Función para generar AST simple con INICIO y 3 hijos
+void generate_simple_ast(InstruccionList *list)
+{
+    node_counter = 0; // Reiniciar contador
+
+    ASTVal *root = create_ast_node("INICIO");
+
+    InstruccionNode *current = list->head;
+
+    while (current)
+    {
+        ASTVal *hijo = ast_execute(current->instr);
+        add_child(root, hijo);
+        current = current->next;
+    }
+
+    // Generar archivo DOT
+    generar_dot(root);
 }

@@ -1,17 +1,6 @@
 #include "../structures/parser.h"
 #include <string.h>
 
-// === AST Dinámico Simplificado ===
-typedef enum
-{
-    AST_LITERAL,
-    AST_IDENTIFIER,
-    AST_BINARY_OP,
-    AST_UNARY_OP,
-    AST_ROOT_INSTR,
-    AST_UNKNOWN
-} SimpleASTKind;
-
 void semantic_analysis();
 void semantic_analysis_execute(Instruccion *instruction, Context *context);
 
