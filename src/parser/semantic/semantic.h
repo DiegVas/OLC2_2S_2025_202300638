@@ -12,24 +12,6 @@ typedef enum
     AST_UNKNOWN
 } SimpleASTKind;
 
-typedef struct SimpleASTNode
-{
-    SimpleASTKind kind;
-    char *repr;     // operador, literal, id
-    char *dataType; // inferencia opcional
-    struct SimpleASTNode *left;
-    struct SimpleASTNode *right;
-    struct SimpleASTNode *next; // para listas lineales de instrucciones
-} SimpleASTNode;
-
-SimpleASTNode *ast_new(SimpleASTKind kind, const char *repr, const char *dtype);
-SimpleASTNode *ast_build_expression(Expression *expr);
-SimpleASTNode *ast_append_instruction(SimpleASTNode *list, SimpleASTNode *node);
-void ast_free(SimpleASTNode *node);
-void ast_print(SimpleASTNode *root, int indent, FILE *out);
-const char *get_ast_report();
-extern SimpleASTNode *AST_ROOT_GLOBAL;
-
 void semantic_analysis();
 void semantic_analysis_execute(Instruccion *instruction, Context *context);
 
@@ -59,10 +41,12 @@ typedef enum ExecuteType
     SWITCH_STATEMENT,
     WHILE_STATEMENT,
     FOR_STATEMENT,
+    FOREACH_STATEMENT,
     BREAK_STATEMENT,
     CONTINUE_STATEMENT,
     RETURN_STATEMENT,
     VOID_CALL,
+
     UNKNOWN
 } ExecuteType;
 
@@ -142,4 +126,10 @@ symbol **get_VectorElementPointer(Context *context, Expression *index_exp, Vecto
 symbol **get_MatrixElementPointer(Context *context, Expression *row_exp, Expression *col_exp, MatrixList *matrix);
 
 symbol *get_legth_of_vector(VectorList *vector);
+// Función para acceso a arreglos multidimensionales
 symbol *access_multidimensional_array(List *array, ExpressionList *indices, Context *context, int expected_dimensions);
+
+// Función para asignación en arreglos multidimensionales
+bool assign_multidimensional_array(List *array, ExpressionList *indices, Context *context, symbol *new_value, int expected_dimensions);
+
+// AST relacionado

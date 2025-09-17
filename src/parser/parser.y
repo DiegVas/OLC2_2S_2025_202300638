@@ -95,7 +95,7 @@ int yyerror(const char *s);
 %type <switchdata> SWITCH_STATEMENT
 %type <casenodelist> CASES
 %type <instrList> DEFAULT_CASE
-%type <instr> FOR_STATEMENT
+%type <instr> FOR_STATEMENT FOREACH_STATEMENT
 %type <ival> dimensions;
 %type<list> dimension_values_list dimension_expression
 %type<listdata> dimension_value
@@ -240,6 +240,11 @@ instruction:
         $1->line = @1.first_line;
         $$ = $1; 
     }
+    | FOREACH_STATEMENT{
+        $1->InstType = "FOREACH_STATEMENT";
+        $1->line = @1.first_line;
+        $$ = $1;
+    }
     | FOR_STATEMENT {
         $1->InstType = "FOR_STATEMENT";
         $1->line = @1.first_line;
@@ -301,6 +306,14 @@ assignment:
         instP->IndexVector = $6;
         instP->IndexMatrix = $3;
         instP->value = $9;
+        instP->column = @1.first_column;
+        $$ = instP; }
+    //* ID[][][]... = expression (arreglos multidimensionales)
+    | ID dimensions_expressions '=' expression {
+        Instruccion* instP = (Instruccion*)malloc(sizeof(Instruccion));
+        instP->id = $1;
+        instP->indexList = $2;
+        instP->value = $4;
         instP->column = @1.first_column;
         $$ = instP; }
     //* ID += expression
@@ -987,6 +1000,18 @@ FOR_STATEMENT:
 
         instP->forData->update = updateInst;
         instP->forData->block = $12;
+        instP->column = @1.first_column;
+        $$ = instP;
+    };
+
+FOREACH_STATEMENT:
+    FOR '(' primitive_types ID ':' ID ')' '{' BREAK_LINE sentences '}' {
+        Instruccion* instP = (Instruccion*)malloc(sizeof(Instruccion));
+        instP->forEachData = (ForEachData*)malloc(sizeof(ForEachData));
+        instP->forEachData->type = $3;
+        instP->forEachData->item = $4;
+        instP->forEachData->array = $6;
+        instP->forEachData->block = $10;
         instP->column = @1.first_column;
         $$ = instP;
     };

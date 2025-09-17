@@ -18,6 +18,8 @@ ExecuteType get_instruction_type(const char *type_str)
         return WHILE_STATEMENT;
     if (strcmp(type_str, "FOR_STATEMENT") == 0)
         return FOR_STATEMENT;
+    if (strcmp(type_str, "FOREACH_STATEMENT") == 0)
+        return FOREACH_STATEMENT;
     if (strcmp(type_str, "BREAK") == 0)
         return BREAK_STATEMENT;
     if (strcmp(type_str, "CONTINUE") == 0)

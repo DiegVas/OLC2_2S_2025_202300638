@@ -1,9 +1,10 @@
 #include "UI.h"
 
 // Función para aplicar estilos CSS globales
-void apply_global_styles() {
+void apply_global_styles()
+{
     GtkCssProvider *css_provider = gtk_css_provider_new();
-    const gchar *css_data = 
+    const gchar *css_data =
         "* { "
         "  background-color: #151515; "
         "  color: #ffffff; "
@@ -218,12 +219,11 @@ void apply_global_styles() {
         "  border-width: 0px; "
         "  border-style: none; "
         "}";
-        
+
     gtk_css_provider_load_from_data(css_provider, css_data, -1, NULL);
     gtk_style_context_add_provider_for_screen(
         gdk_screen_get_default(),
         GTK_STYLE_PROVIDER(css_provider),
-        GTK_STYLE_PROVIDER_PRIORITY_APPLICATION
-    );
+        GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
     g_object_unref(css_provider);
 }

@@ -1,4 +1,3 @@
-#include "../structures/parser.h"
 #include "semantic.h"
 
 Context *contextGlobal = NULL;

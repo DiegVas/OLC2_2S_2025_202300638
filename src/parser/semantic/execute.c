@@ -274,6 +274,81 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
                     fprintf(stderr, "Matriz completa actualizada: %s\n", sym_to_update->value);
                     return;
                 }
+
+                if (strcmp(sym_to_update->type, "LIST") == 0 && instruction->indexList)
+                {
+                    fprintf(stderr, "Asignación a elemento de arreglo multidimensional detectada para ID: %s\n", instruction->id);
+
+                    // Validar que el número de índices coincida con las dimensiones
+                    int provided_indices = 0;
+                    ExpressionNode *idx_node = instruction->indexList->head;
+                    while (idx_node)
+                    {
+                        provided_indices++;
+                        idx_node = idx_node->next;
+                    }
+
+                    if (provided_indices != sym_to_update->dimensions)
+                    {
+                        char error_msg[256];
+                        snprintf(error_msg, sizeof(error_msg),
+                                 "Index count mismatch for assignment: expected %d indices, got %d",
+                                 sym_to_update->dimensions, provided_indices);
+                        Error_exists(error_msg, context->nombre, instruction);
+                        return;
+                    }
+
+                    // Validar que los índices sean de tipo entero
+                    idx_node = instruction->indexList->head;
+                    int idx_count = 0;
+                    while (idx_node)
+                    {
+                        if (!idx_node->expr)
+                        {
+                            Error_exists("Invalid index expression in assignment", context->nombre, instruction);
+                            return;
+                        }
+
+                        symbol *idx_val = evaluate_expression(idx_node->expr, context);
+                        if (!idx_val)
+                        {
+                            Error_exists("Failed to evaluate index expression in assignment", context->nombre, instruction);
+                            return;
+                        }
+
+                        if (!idx_val->dataType || strcmp(idx_val->dataType, "INTEGER") != 0)
+                        {
+                            Error_exists("Array indices must be of type INTEGER in assignment", context->nombre, instruction);
+                            return;
+                        }
+
+                        idx_count++;
+                        idx_node = idx_node->next;
+                    }
+
+                    // Realizar la asignación
+                    bool assignment_success = assign_multidimensional_array(
+                        sym_to_update->arrayValues,
+                        instruction->indexList,
+                        context,
+                        evaluated_assign,
+                        sym_to_update->dimensions);
+
+                    if (!assignment_success)
+                    {
+                        Error_exists("Failed to assign value to multidimensional array element", context->nombre, instruction);
+                        return;
+                    }
+
+                    // Actualizar la representación string del arreglo completo
+                    if (sym_to_update->value)
+                        free(sym_to_update->value);
+                    sym_to_update->value = printArray(sym_to_update->arrayValues);
+
+                    fprintf(stderr, "Arreglo multidimensional actualizado: %s\n", sym_to_update->value);
+                    return;
+                }
+
                 symbol *evaluated_value = apply_casting_auto(evaluated_assign, sym_to_update->dataType);
                 if (strcmp(sym_to_update->dataType, evaluated_value->dataType) != 0)
                 {
@@ -528,6 +603,111 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
         }
         Symbol_table_insertContext(SymbolTable_General, ctx_while->symbols_context);
         break;
+    }
+    case FOREACH_STATEMENT:
+    {
+        Context *ctx_foreach = calloc(1, sizeof(Context));
+        ctx_foreach->after = context;
+        ctx_foreach->symbols_context = Symbol_table_create();
+        ctx_foreach->nombre = "Foreach";
+
+        Context *search_ctx = context;
+        while (search_ctx)
+        {
+
+            if (SearchID(search_ctx->symbols_context, instruction->forEachData->array))
+            {
+                symbol *array_symbol = SearchSymbol(search_ctx->symbols_context, instruction->forEachData->array);
+
+                if (strcmp(array_symbol->type, "VECTOR") != 0)
+                    return Error_exists("FOREACH solo soporta vectores", context->nombre, instruction);
+
+                VectorList *vector_values = array_symbol->vectorValues;
+                if (!vector_values || !vector_values->head)
+                {
+                    fprintf(stderr, "Vector vacío o inválido para foreach\n");
+                    return;
+                }
+
+                // Iterar sobre cada elemento del vector
+                VectorNode *vector_node = vector_values->head;
+                while (vector_node)
+                {
+                    fprintf(stderr, "DEBUG: Foreach - Procesando elemento del vector\n");
+
+                    // Crear o actualizar el símbolo de iteración para el elemento actual
+                    symbol *loop_symbol = (symbol *)calloc(1, sizeof(symbol));
+                    loop_symbol->id = instruction->forEachData->item;
+                    loop_symbol->dataType = instruction->forEachData->type;
+                    loop_symbol->type = "VARIABLE";
+                    loop_symbol->environment = ctx_foreach->nombre;
+                    loop_symbol->line = &(instruction->line);
+                    loop_symbol->column = &(instruction->column);
+
+                    // Asignar el valor del elemento actual
+                    if (vector_node->value)
+                    {
+                        loop_symbol->value = vector_node->value->value ? strdup(vector_node->value->value) : strdup("NULL");
+                        fprintf(stderr, "DEBUG: Foreach - Variable '%s' = '%s'\n",
+                                loop_symbol->id, loop_symbol->value);
+                    }
+                    else if (vector_node->exprData)
+                    {
+                        symbol *eval_expr = evaluate_expression(vector_node->exprData, context);
+                        if (eval_expr)
+                        {
+                            loop_symbol->value = eval_expr->value ? strdup(eval_expr->value) : strdup("NULL");
+                            fprintf(stderr, "DEBUG: Foreach - Variable '%s' = '%s' (from expression)\n",
+                                    loop_symbol->id, loop_symbol->value);
+                        }
+                        else
+                        {
+                            loop_symbol->value = strdup("NULL");
+                        }
+                    }
+                    else
+                    {
+                        loop_symbol->value = strdup("NULL");
+                    }
+
+                    // Insertar la variable de iteración en el contexto del foreach
+                    Symbol_table_insert(ctx_foreach->symbols_context, loop_symbol);
+
+                    // Ejecutar todo el bloque de instrucciones con el elemento actual
+                    InstruccionNode *curr = instruction->forEachData->block->head;
+                    while (curr)
+                    {
+                        semantic_analysis_execute(curr->instr, ctx_foreach);
+
+                        if (ctx_foreach->break_instruction)
+                            break;
+
+                        if (ctx_foreach->continue_instruction)
+                        {
+                            ctx_foreach->continue_instruction = false;
+                            break;
+                        }
+
+                        curr = curr->next;
+                    }
+
+                    if (ctx_foreach->break_instruction)
+                        break;
+
+                    // Limpiar la tabla de símbolos para la siguiente iteración
+                    // (mantener solo los símbolos que no sean la variable de iteración)
+                    ctx_foreach->symbols_context = Symbol_table_create();
+
+                    vector_node = vector_node->next;
+                }
+                Symbol_table_insertContext(SymbolTable_General, ctx_foreach->symbols_context);
+                return;
+            }
+
+            search_ctx = search_ctx->after;
+        }
+
+        return Error_exists("FOREACH no implementado aún", context->nombre, instruction);
     }
     case FOR_STATEMENT:
     {

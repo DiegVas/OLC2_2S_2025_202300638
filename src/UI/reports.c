@@ -1,6 +1,5 @@
 #include "UI.h"
 #include "../structures/parser.h"
-#include "../reports/ast_generator.h"
 
 // Function to safely check if a string pointer is valid
 static bool is_valid_string(const char *str)
@@ -316,43 +315,12 @@ void update_ast_report()
     // Crear carpeta reports si no existe
     system("mkdir -p reports");
 
-    // Crear AST de ejemplo
-    ASTNode *example_ast = create_example_ast();
-
     // Generar archivos en la carpeta reports
     char dot_filename[] = "reports/ast.dot";
     char png_filename[] = "reports/ast.png";
 
-    generate_ast_dot_file(example_ast, dot_filename);
-    generate_ast_image(dot_filename, png_filename);
-
     // Cargar la imagen en el widget
     gtk_image_set_from_file(GTK_IMAGE(global_widgets->ast_view), png_filename);
-
-    // Limpiar memoria
-    ASTNode_destroy(example_ast);
 
     printf("AST actualizado en la interfaz y archivos generados en reports/\n");
-}
-
-// Función para generar AST desde el parser (para uso futuro)
-void update_ast_from_parser(ASTNode *root)
-{
-    if (!global_widgets || !global_widgets->ast_view || !root)
-        return;
-
-    // Crear carpeta reports si no existe
-    system("mkdir -p reports");
-
-    // Generar archivos en la carpeta reports
-    char dot_filename[] = "reports/ast.dot";
-    char png_filename[] = "reports/ast.png";
-
-    generate_ast_dot_file(root, dot_filename);
-    generate_ast_image(dot_filename, png_filename);
-
-    // Cargar la imagen en el widget
-    gtk_image_set_from_file(GTK_IMAGE(global_widgets->ast_view), png_filename);
-
-    printf("AST del parser actualizado en la interfaz y archivos generados en reports/\n");
 }

@@ -441,3 +441,162 @@ symbol *access_multidimensional_array(List *array, ExpressionList *indices, Cont
 
     return NULL;
 }
+
+// Función para asignar valores en arreglos multidimensionales
+bool assign_multidimensional_array(List *array, ExpressionList *indices, Context *context, symbol *new_value, int expected_dimensions)
+{
+
+    if (!array || !indices || !new_value || !context)
+    {
+
+        return false;
+    }
+
+    if (!indices->head)
+    {
+
+        return false;
+    }
+
+    ExpressionNode *current_index = indices->head;
+    if (!current_index || !current_index->expr)
+    {
+
+        return false;
+    }
+
+    // Evaluar el primer índice
+    symbol *index_symbol = evaluate_expression(current_index->expr, context);
+    if (!index_symbol)
+    {
+
+        return false;
+    }
+
+    if (!index_symbol->dataType || strcmp(index_symbol->dataType, "INTEGER") != 0)
+    {
+        fprintf(stderr, "DEBUG: assign_multidimensional_array - Tipo de índice inválido\n");
+        return false;
+    }
+
+    if (!index_symbol->value)
+    {
+        fprintf(stderr, "DEBUG: assign_multidimensional_array - Valor de índice es NULL\n");
+        return false;
+    }
+
+    int index = atoi(index_symbol->value);
+    // Contar elementos en la lista actual
+    ListNode *current_node = array->head;
+    int list_size = 0;
+    while (current_node)
+    {
+        list_size++;
+        current_node = current_node->next;
+    }
+
+    // Validar que el índice esté en rango
+    if (index < 0 || index >= list_size)
+    {
+        fprintf(stderr, "DEBUG: Index %d out of bounds (size: %d) for assignment\n", index, list_size);
+        return false;
+    }
+
+    // Navegar al elemento en la posición index
+    current_node = array->head;
+    for (int i = 0; i < index && current_node; i++)
+    {
+        current_node = current_node->next;
+    }
+
+    if (!current_node || !current_node->listData)
+    {
+        fprintf(stderr, "DEBUG: assign_multidimensional_array - Nodo o datos inválidos\n");
+        return false;
+    }
+
+    ListData *current_data = current_node->listData;
+
+    // Si este es el último índice
+    if (!current_index->next)
+    {
+
+        // Debemos estar en una expresión final o símbolo, no en otra lista
+        if (current_data->exprData)
+        {
+
+            // Actualizar la expresión directamente (sin liberar memoria previa para evitar errores)
+            current_data->exprData->type = new_value->dataType ? strdup(new_value->dataType) : strdup("UNDEFINED");
+            current_data->exprData->value = new_value->value ? strdup(new_value->value) : strdup("NULL");
+
+            return true;
+        }
+        else if (current_data->symData)
+        {
+
+            // Actualizar el símbolo directamente (sin liberar memoria previa para evitar errores)
+            current_data->symData->dataType = new_value->dataType ? strdup(new_value->dataType) : strdup("UNDEFINED");
+            current_data->symData->value = new_value->value ? strdup(new_value->value) : strdup("NULL");
+            return true;
+        }
+        else if (current_data->listData)
+        {
+            // Error: todavía hay más dimensiones pero no más índices
+            fprintf(stderr, "DEBUG: assign_multidimensional_array - Error: insuficientes índices\n");
+            return false;
+        }
+        else
+        {
+            fprintf(stderr, "DEBUG: assign_multidimensional_array - No hay datos para actualizar\n");
+            return false;
+        }
+    }
+    else
+    {
+
+        // Hay más índices, debemos continuar navegando
+        if (current_data->listData)
+        {
+
+            // Crear una nueva lista de índices sin el primer elemento
+            ExpressionList *remaining_indices = create_expression_list();
+            if (!remaining_indices)
+            {
+                fprintf(stderr, "DEBUG: assign_multidimensional_array - Error creando remaining_indices\n");
+                return false;
+            }
+
+            ExpressionNode *next_index = current_index->next;
+            while (next_index)
+            {
+                if (next_index->expr) // Validación adicional
+                {
+                    ExpressionList_add(remaining_indices, next_index->expr);
+                }
+                next_index = next_index->next;
+            }
+
+            // Llamada recursiva con la sublista y los índices restantes
+            bool recursive_result = assign_multidimensional_array(
+                current_data->listData,
+                remaining_indices,
+                context,
+                new_value,
+                expected_dimensions - 1);
+
+            // Liberar la lista temporal de índices
+            free(remaining_indices);
+
+            return recursive_result;
+        }
+        else
+        {
+            // Error: tenemos más índices pero no más dimensiones
+            fprintf(stderr, "DEBUG: assign_multidimensional_array - Error: demasiados índices\n");
+            return false;
+        }
+    }
+
+    fprintf(stderr, "DEBUG: assign_multidimensional_array - Llegó al final sin retornar\n");
+    return false;
+}

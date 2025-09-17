@@ -120,6 +120,8 @@ typedef struct InstruccionList InstruccionList;
 typedef struct IfNodeList IfNodeList;
 typedef struct IfData IfData;
 typedef struct ForData ForData;
+typedef struct ForEachData ForEachData;
+
 typedef struct WhileData
 {
     Expression *condition;
@@ -138,12 +140,14 @@ typedef struct Instruccion
     SwitchData *switchData;
     WhileData *whileData;
     ForData *forData;
+    ForEachData *forEachData;
     Function *functionData;
-    SymbolList *arrayValues;  // Para arreglos
-    VectorList *vectorValues; // Para vectores
-    MatrixList *matrixValues; // Para matrices
-    Expression *IndexVector;  // Para acceso a vectores
-    Expression *IndexMatrix;  // Para acceso a matrices
+    SymbolList *arrayValues;   // Para arreglos
+    VectorList *vectorValues;  // Para vectores
+    MatrixList *matrixValues;  // Para matrices
+    Expression *IndexVector;   // Para acceso a vectores
+    Expression *IndexMatrix;   // Para acceso a matrices
+    ExpressionList *indexList; // Para acceso/asignación a arreglos multidimensionales
     int line;
     int column;
     Expression *value;
@@ -165,6 +169,14 @@ struct ForData
     Instruccion *init;
     Expression *condition;
     Instruccion *update;
+    InstruccionList *block;
+};
+
+struct ForEachData
+{
+    char *type;
+    char *item;
+    char *array;
     InstruccionList *block;
 };
 

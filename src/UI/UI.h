@@ -6,7 +6,6 @@
 #include <pango-1.0/pango/pango-attributes.h>
 #include "parser.tab.h"
 #include "../structures/parser.h"
-#include "../reports/ast_generator.h"
 
 // Declaraciones del lexer/parser
 extern int yyparse(void);
@@ -53,7 +52,6 @@ GtkWidget *create_reports_panel();
 void update_symbols_table_safe(GtkListStore *store, symbol_table *table);
 void update_errors_table_safe(GtkListStore *store, ErrorList *list);
 void update_ast_report();
-void update_ast_from_parser(ASTNode *root);
 
 // Declaraciones de funciones - styles.c
 void apply_global_styles();
