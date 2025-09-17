@@ -592,15 +592,21 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
         while (condition_value)
         {
             InstruccionNode *curr = while_block->head;
+
+            Context *inner_ctx = calloc(1, sizeof(Context));
+            inner_ctx->after = ctx_while;
+            inner_ctx->symbols_context = Symbol_table_create();
+            inner_ctx->nombre = "Inner_While";
+
             while (curr)
             {
-                semantic_analysis_execute(curr->instr, ctx_while);
-                if (ctx_while->break_instruction)
+                semantic_analysis_execute(curr->instr, inner_ctx);
+                if (inner_ctx->break_instruction)
                     break;
 
-                if (ctx_while->continue_instruction)
+                if (inner_ctx->continue_instruction)
                 {
-                    ctx_while->continue_instruction = false;
+                    inner_ctx->continue_instruction = false;
                     break;
                 }
 
@@ -781,7 +787,10 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
         bool found_loop = false;
         while (ctx)
         {
-            if (strcmp(ctx->nombre, "For") == 0 || strcmp(ctx->nombre, "While") == 0 || strcmp(ctx->nombre, "Switch") == 0)
+            fprintf(stderr, "---------------------\n");
+            fprintf(stderr, "DEBUG: Buscando contexto para BREAK, contexto actual: %s\n", ctx->nombre);
+            fprintf(stderr, "Nombre del contexto: %s\n", ctx->nombre);
+            if (strcmp(ctx->nombre, "For") == 0 || strcmp(ctx->nombre, "While") == 0 || strcmp(ctx->nombre, "Switch") == 0 || strcmp(ctx->nombre, "Inner_While") == 0 || strcmp(ctx->nombre, "Inner_For") == 0 || strcmp(ctx->nombre, "Foreach") == 0)
             {
                 ctx->break_instruction = true;
                 found_loop = true;
@@ -802,7 +811,7 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
         bool found_loop = false;
         while (ctx)
         {
-            if (strcmp(ctx->nombre, "For") == 0 || strcmp(ctx->nombre, "While") == 0)
+            if (strcmp(ctx->nombre, "For") == 0 || strcmp(ctx->nombre, "While") == 0 || strcmp(ctx->nombre, "Inner_While") == 0 || strcmp(ctx->nombre, "Inner_For") == 0 || strcmp(ctx->nombre, "Foreach") == 0)
             {
 
                 ctx->continue_instruction = true;

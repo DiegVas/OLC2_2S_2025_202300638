@@ -16,7 +16,7 @@ void semantic_analysis()
     contextGlobal->nombre = "Global";
     contextGlobal->symbols_context = Symbol_table_create();
 
-    // generate_simple_ast(list_tokens);
+    generate_simple_ast(list_tokens);
 
     InstruccionNode *curr = list_tokens->head;
     while (curr)
