@@ -858,6 +858,26 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
         Symbol_table_insertContext(SymbolTable_General, ctx_func->symbols_context);
         break;
     }
+    case BLOCK_STATEMENT:
+    {
+        InstruccionNode *curr = instruction->body->head;
+
+        Context *ctx_block = calloc(1, sizeof(Context));
+        ctx_block->after = context;
+        ctx_block->symbols_context = Symbol_table_create();
+        ctx_block->nombre = "Block";
+
+        while (curr)
+        {
+            semantic_analysis_execute(curr->instr, ctx_block);
+            if (strcmp(curr->instr->InstType, "RETURN") == 0)
+                break;
+
+            curr = curr->next;
+        }
+        Symbol_table_insertContext(SymbolTable_General, ctx_block->symbols_context);
+        break;
+    }
     default:
         fprintf(stderr, "Instrucción no manejada en análisis semántico: %s\n", instruction->InstType);
         break;

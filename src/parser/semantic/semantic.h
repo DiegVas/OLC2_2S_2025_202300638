@@ -46,7 +46,7 @@ typedef enum ExecuteType
     CONTINUE_STATEMENT,
     RETURN_STATEMENT,
     VOID_CALL,
-
+    BLOCK_STATEMENT,
     UNKNOWN
 } ExecuteType;
 

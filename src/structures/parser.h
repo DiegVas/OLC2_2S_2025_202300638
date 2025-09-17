@@ -148,6 +148,7 @@ typedef struct Instruccion
     Expression *IndexVector;   // Para acceso a vectores
     Expression *IndexMatrix;   // Para acceso a matrices
     ExpressionList *indexList; // Para acceso/asignación a arreglos multidimensionales
+    InstruccionList *body;
     int line;
     int column;
     Expression *value;

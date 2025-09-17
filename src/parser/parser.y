@@ -192,7 +192,15 @@ separator
 
 
 instruction:
-    declaration {
+    '{' sentences '}' {
+        Instruccion* instP = (Instruccion*)malloc(sizeof(Instruccion));
+        instP->InstType = "BLOCK";
+        instP->id = "BLOCK";
+        instP->body = $2;
+        instP->line = @1.first_line;
+        instP->column = @1.first_column;
+        $$ = instP; }
+    | declaration {
         $1->InstType = "DECLARATION";
         $1->line = @1.first_line;
         $$ = $1;
@@ -284,7 +292,7 @@ instruction:
 
 //* Asignacion de valores a variables ya existentes
 
-assignment:
+assignment: 
     ID '=' expression {
         Instruccion* instP = (Instruccion*)malloc(sizeof(Instruccion));
         instP->id = $1;

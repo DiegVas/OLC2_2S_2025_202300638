@@ -1,5 +1,10 @@
 #include "UI.h"
 #include "../structures/parser.h"
+#include "../reports/ast.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <string.h>
 
 // Function to safely check if a string pointer is valid
 static bool is_valid_string(const char *str)

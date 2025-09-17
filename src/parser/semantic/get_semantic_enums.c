@@ -28,6 +28,8 @@ ExecuteType get_instruction_type(const char *type_str)
         return RETURN_STATEMENT;
     if (strcmp(type_str, "VOID_CALL") == 0)
         return VOID_CALL;
+    if (strcmp(type_str, "BLOCK") == 0)
+        return BLOCK_STATEMENT;
     return UNKNOWN;
 }
 
