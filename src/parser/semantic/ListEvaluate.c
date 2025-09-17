@@ -16,8 +16,17 @@ List *evaluate_list(List *list, Context *evaluateContext)
         if (data->exprData)
         {
             symbol *da = evaluate_expression(data->exprData, evaluateContext);
-            data->symData = da;
-            data->exprData = NULL; // Clear exprData after evaluation
+            if (da != NULL)
+            {
+                data->symData = da;
+                data->exprData = NULL; // Clear exprData after evaluation
+            }
+            else
+            {
+                fprintf(stderr, "Error: evaluate_expression returned NULL for list data\n");
+                data->symData = NULL;
+                data->exprData = NULL; // Clear exprData even on error
+            }
         }
 
         List_add(evaluated_list, data);
@@ -68,9 +77,20 @@ VectorList *evaluate_vector(char *dataType, VectorList *vec, Context *evaluateCo
         if (current->exprData)
         {
             symbol *da = evaluate_expression(current->exprData, evaluateContext);
-            da = apply_casting_auto(da, dataType);
-            fprintf(stderr, "Evaluated vector expression: Type=%s, Value=%s\n", da->dataType, da->value);
-            current->value = da;
+            if (da != NULL)
+            {
+                da = apply_casting_auto(da, dataType);
+                fprintf(stderr, "Evaluated vector expression: Type=%s, Value=%s\n", da->dataType, da->value);
+                current->value = da;
+            }
+            else
+            {
+                fprintf(stderr, "Error: evaluate_expression returned NULL\n");
+                // Crear un símbolo por defecto o manejar el error
+                current->value = NULL;
+            }
+            // Limpiar exprData después de procesarlo para evitar accesos inválidos
+            current->exprData = NULL;
         }
 
         VectorList_addSym(evaluated_vector, current->value);
@@ -83,6 +103,12 @@ VectorList *evaluate_vector(char *dataType, VectorList *vec, Context *evaluateCo
 symbol **get_VectorElementPointer(Context *context, Expression *index_exp, VectorList *vector)
 {
     symbol *index_access = evaluate_expression(index_exp, context);
+
+    if (index_access == NULL)
+    {
+        fprintf(stderr, "Error: evaluate_expression returned NULL for vector index\n");
+        return NULL;
+    }
 
     if (strcmp(index_access->dataType, "INTEGER") != 0)
         return NULL;
@@ -107,6 +133,12 @@ symbol **get_MatrixElementPointer(Context *context, Expression *row_exp, Express
 {
     symbol *row_access = evaluate_expression(row_exp, context);
     symbol *col_access = evaluate_expression(col_exp, context);
+
+    if (row_access == NULL || col_access == NULL)
+    {
+        fprintf(stderr, "Error: evaluate_expression returned NULL for matrix indices\n");
+        return NULL;
+    }
 
     if (strcmp(row_access->dataType, "INTEGER") != 0 || strcmp(col_access->dataType, "INTEGER") != 0)
         return NULL;
@@ -199,13 +231,28 @@ char *printVector(VectorList *vec)
     VectorNode *current = vec->head;
     while (current)
     {
-        if (current->value)
+        if (current->value && current->value->value)
         {
             strcat(result, current->value->value);
         }
         else if (current->exprData)
         {
-            strcat(result, current->exprData->value);
+            // Solo acceder a exprData si el puntero parece válido
+            // Normalmente, exprData debería ser NULL después de la evaluación
+            if (current->exprData != NULL &&
+                current->exprData != (void *)0xbebebebebebebebe &&
+                current->exprData->value != NULL)
+            {
+                strcat(result, current->exprData->value);
+            }
+            else
+            {
+                strcat(result, "UNDEFINED");
+            }
+        }
+        else
+        {
+            strcat(result, "NULL");
         }
 
         if (current->next)

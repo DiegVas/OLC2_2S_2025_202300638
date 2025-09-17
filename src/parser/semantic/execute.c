@@ -739,17 +739,24 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
 
         while (condition_value)
         {
+
+            Context *inner_ctx = calloc(1, sizeof(Context));
+            inner_ctx->after = ctx_for;
+            inner_ctx->symbols_context = Symbol_table_create();
+            inner_ctx->nombre = "Inner_For";
+
             InstruccionNode *curr = for_block->head;
             while (curr)
             {
-                semantic_analysis_execute(curr->instr, ctx_for);
 
-                if (ctx_for->break_instruction)
+                semantic_analysis_execute(curr->instr, inner_ctx);
+
+                if (inner_ctx->break_instruction)
                     break;
 
-                if (ctx_for->continue_instruction)
+                if (inner_ctx->continue_instruction)
                 {
-                    ctx_for->continue_instruction = false;
+                    inner_ctx->continue_instruction = false;
                     break;
                 }
 

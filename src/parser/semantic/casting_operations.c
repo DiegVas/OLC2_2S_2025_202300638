@@ -28,6 +28,12 @@ bool is_valid_cast(OperativeType from, OperativeType to)
 // Función para aplicar casting automático
 symbol *apply_casting_auto(symbol *value, const char *target_type)
 {
+    // Verificar que value no sea NULL
+    if (value == NULL)
+    {
+        return NULL;
+    }
+
     OperativeType from_type = get_operativeType(value->dataType);
     OperativeType to_type = get_operativeType(target_type);
 
