@@ -276,6 +276,7 @@ void on_run_clicked(GtkToolButton *button, gpointer user_data)
                 update_errors_table_safe(global_widgets->errors_store, list_errors);
 
                 // Actualizar el AST con el ejemplo
+                // ! aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
                 update_ast_report();
 
                 fclose(temp_file);

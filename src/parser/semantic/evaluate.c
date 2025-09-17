@@ -17,19 +17,19 @@ symbol *evaluate_expression(Expression *expr, Context *context)
     {
     case EXP_INTEGER:
         result->value = strcmp(expr->value, "UNDEFINED") == 0 ? strdup("0") : strdup(expr->value);
-        result->dataType = "INTEGER";
+        result->dataType = strdup("INTEGER");
         break;
     case EXP_FLOAT:
         result->value = strcmp(expr->value, "UNDEFINED") == 0 ? strdup("0.0") : strdup(expr->value);
-        result->dataType = "FLOAT";
+        result->dataType = strdup("FLOAT");
         break;
     case EXP_STRING:
         result->value = strcmp(expr->value, "UNDEFINED") == 0 ? strdup("NULL") : strdup(expr->value);
-        result->dataType = "STRING";
+        result->dataType = strdup("STRING");
         break;
     case EXP_BOOLEAN:
         result->value = strcmp(expr->value, "UNDEFINED") == 0 ? strdup("false") : strdup(expr->value);
-        result->dataType = "BOOLEAN";
+        result->dataType = strdup("BOOLEAN");
         break;
     case EXP_CHARACTER:
     {
@@ -45,68 +45,38 @@ symbol *evaluate_expression(Expression *expr, Context *context)
 
             if (strncmp(input, "\\u", 2) == 0 && strlen(input) >= 6)
             {
-                // Determinar cuántos dígitos hex hay después de \u
-                int hex_digits = 0;
-                for (int i = 2; i < strlen(input) && hex_digits < 8; i++)
+                // Procesar secuencias Unicode como \u0082 o \u00164
+                char hex_str[9] = {0};
+                int hex_len = 0;
+
+                // Extraer todos los dígitos hexadecimales después de \u
+                for (int i = 2; i < strlen(input) && hex_len < 8; i++)
                 {
                     char c = input[i];
                     if ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'))
                     {
-                        hex_digits++;
+                        hex_str[hex_len++] = c;
                     }
                     else
                     {
                         break;
                     }
                 }
-
-                // Tomar los primeros 4 dígitos hex para el código Unicode
-                int digits_to_use = (hex_digits >= 4) ? 4 : hex_digits;
-                char hex_str[9] = {0};
-                strncpy(hex_str, input + 2, digits_to_use);
-                hex_str[digits_to_use] = '\0';
+                hex_str[hex_len] = '\0';
 
                 unsigned int unicode_val;
                 if (sscanf(hex_str, "%x", &unicode_val) == 1)
                 {
-                    // Mapeo especial para algunos códigos Unicode comunes
-                    if (unicode_val == 0x0082)
+                    // Convertir directamente el valor Unicode a su carácter ASCII correspondiente
+                    if (unicode_val <= 127)
                     {
-                        sprintf(formatted_char, "'R'"); // \u0082 = R según tu ejemplo
-                    }
-                    else if (unicode_val == 0x0016)
-                    {
-                        sprintf(formatted_char, "'\\x16'"); // Carácter de control
-                    }
-                    else if (unicode_val <= 31)
-                    {
-                        // Caracteres de control (0-31)
-                        sprintf(formatted_char, "'\\x%02X'", unicode_val);
-                    }
-                    else if (unicode_val <= 127)
-                    {
-                        // ASCII imprimible
-                        sprintf(formatted_char, "'%c'", (char)unicode_val);
-                    }
-                    else if (unicode_val <= 255)
-                    {
-                        // Caracteres extendidos Latin-1
+                        // Carácter ASCII válido
                         sprintf(formatted_char, "'%c'", (char)unicode_val);
                     }
                     else
                     {
-                        // Para valores Unicode > 255, mostrar el valor hex
-                        sprintf(formatted_char, "'\\u%04X'", unicode_val);
-                    }
-
-                    // Si había dígitos extra después del código Unicode, agregarlos como sufijo
-                    if (hex_digits > 4)
-                    {
-                        char extra_chars[14];
-                        strncpy(extra_chars, input + 2 + 4, hex_digits - 4);
-                        extra_chars[hex_digits - 4] = '\0';
-                        // Para este caso específico, podríamos tratar los dígitos extra como parte del valor
-                        printf("DEBUG: Unicode con dígitos extra: \\u%s (extra: %s)\n", hex_str, extra_chars);
+                        // Para valores fuera del rango ASCII, mantener como carácter si es imprimible
+                        sprintf(formatted_char, "'%c'", (char)unicode_val);
                     }
                 }
                 else

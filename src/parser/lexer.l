@@ -208,6 +208,12 @@ BREAK_LINE \n
 
 "void" return VOID;
 
+"public" return PUBLIC;
+
+"static" return STATIC;
+
+"main" return MAIN;
+
 "true" {
     yylval.sval = strdup(yytext);
     return BOOLEAN;

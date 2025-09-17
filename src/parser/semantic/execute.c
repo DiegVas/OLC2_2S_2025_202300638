@@ -161,7 +161,11 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
             return;
         }
 
+        fprintf(stderr, "Evaluated value: %s of type %s\n", evaluated_value->value, evaluated_value->dataType);
+
         evaluated_value = apply_casting_auto(evaluated_value, instruction->type);
+
+        fprintf(stderr, "After casting, value: %s of type %s\n", evaluated_value->value, evaluated_value->dataType);
 
         if (strcmp(evaluated_value->dataType, "UNDEFINED") == 0)
             // Error: Evaluación de expresión fallida
@@ -389,6 +393,13 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
         if (!print_value)
         {
             Error_exists("Print expression evaluation failed", context->nombre, instruction);
+            return;
+        }
+
+        // Validar que dataType no sea NULL antes de usar strcmp
+        if (!print_value->dataType)
+        {
+            Error_exists("Print expression has NULL dataType", context->nombre, instruction);
             return;
         }
 

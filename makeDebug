@@ -43,16 +43,27 @@ STRUCTURES_FILES = $(STRUCTURES_DIR)/Instruction.c \
                   $(STRUCTURES_DIR)/Expression_list.c \
                   $(STRUCTURES_DIR)/FuctionNode.c
 
+# Archivos de reportes
+REPORTS_DIR = $(SRC)/reports
+REPORTS_FILES = $(REPORTS_DIR)/ast_generator.c \
+                $(REPORTS_DIR)/ast_execute.c \
+                $(REPORTS_DIR)/utils.c \
+                $(REPORTS_DIR)/ast_evaluate.c
+
 GTK_FLAGS = `pkg-config --cflags --libs gtk+-3.0`
 
 # Flags para debugging - incluye símbolos de debug y desactiva optimizaciones
-DEBUG_FLAGS = -g -O0 -DDEBUG
+DEBUG_FLAGS = -g -O0 -DDEBUG -fsanitize=address -fsanitize=undefined -fstack-protector-strong
 # Flags para silenciar advertencias de GTK
 WARNINGS = -Wno-deprecated-declarations
 
 # Target principal para debugging
-debug: $(BUILD)/parser.tab.c $(BUILD)/lexer.yy.c $(MAIN) $(UI_FILES) $(STRUCTURES_FILES) $(PARSER_FILES)
-	$(CC) -I$(INC) -I$(UI_DIR) $(DEBUG_FLAGS) $(WARNINGS) $(BUILD)/parser.tab.c $(BUILD)/lexer.yy.c $(MAIN) $(UI_FILES) $(STRUCTURES_FILES) $(PARSER_FILES) -o $(BUILD)/main_debug $(GTK_FLAGS)
+debug: $(BUILD)/parser.tab.c $(BUILD)/lexer.yy.c $(MAIN) $(UI_FILES) $(STRUCTURES_FILES) $(PARSER_FILES) $(REPORTS_FILES)
+	$(CC) -I$(INC) -I$(UI_DIR) $(DEBUG_FLAGS) $(WARNINGS) $(BUILD)/parser.tab.c $(BUILD)/lexer.yy.c $(MAIN) $(UI_FILES) $(STRUCTURES_FILES) $(PARSER_FILES) $(REPORTS_FILES) -o $(BUILD)/main_debug $(GTK_FLAGS) -luuid
+
+# Target para debugging básico (sin sanitizers para usar con valgrind)
+debug-basic: $(BUILD)/parser.tab.c $(BUILD)/lexer.yy.c $(MAIN) $(UI_FILES) $(STRUCTURES_FILES) $(PARSER_FILES) $(REPORTS_FILES)
+	$(CC) -I$(INC) -I$(UI_DIR) -g -O0 -DDEBUG $(WARNINGS) $(BUILD)/parser.tab.c $(BUILD)/lexer.yy.c $(MAIN) $(UI_FILES) $(STRUCTURES_FILES) $(PARSER_FILES) $(REPORTS_FILES) -o $(BUILD)/main_debug_basic $(GTK_FLAGS) -luuid
 
 # Generación de archivos del parser y lexer (igual que el Makefile original)
 $(BUILD)/parser.tab.c $(BUILD)/parser.tab.h: $(PARSER)
@@ -63,12 +74,28 @@ $(BUILD)/lexer.yy.c: $(LEXER)
 	$(FLEX) -o $(BUILD)/lexer.yy.c $(LEXER)
 
 # Target para ejecutar con gdb
-gdb: debug
-	gdb $(BUILD)/main_debug
+gdb: debug-basic
+	gdb $(BUILD)/main_debug_basic
 
 # Target para ejecutar con valgrind (detección de memory leaks)
-valgrind: debug
-	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes $(BUILD)/main_debug
+valgrind: debug-basic
+	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose $(BUILD)/main_debug_basic
+
+# Target para valgrind con más detalles
+valgrind-full: debug-basic
+	valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all --track-origins=yes --show-reachable=yes --track-fds=yes $(BUILD)/main_debug_basic
+
+# Target para ejecutar directamente con sanitizers activados
+run-debug: debug
+	./$(BUILD)/main_debug
+
+# Target para ver stack traces con core dumps
+core-debug: debug-basic
+	ulimit -c unlimited && ./$(BUILD)/main_debug_basic
+
+# Target para debugging de stack overflows
+stack-debug: $(BUILD)/parser.tab.c $(BUILD)/lexer.yy.c $(MAIN) $(UI_FILES) $(STRUCTURES_FILES) $(PARSER_FILES) $(REPORTS_FILES)
+	$(CC) -I$(INC) -I$(UI_DIR) -g -O0 -DDEBUG -fstack-usage -Wstack-usage=8192 $(WARNINGS) $(BUILD)/parser.tab.c $(BUILD)/lexer.yy.c $(MAIN) $(UI_FILES) $(STRUCTURES_FILES) $(PARSER_FILES) $(REPORTS_FILES) -o $(BUILD)/main_stack $(GTK_FLAGS) -luuid
 
 # Limpieza
 clean:
@@ -76,11 +103,23 @@ clean:
 
 # Target para mostrar ayuda
 help:
+	@echo "=== DEBUGGING MAKEFILE ==="
 	@echo "Targets disponibles:"
-	@echo "  debug     - Compila con símbolos de debug"
-	@echo "  gdb       - Compila y ejecuta con gdb"
-	@echo "  valgrind  - Compila y ejecuta con valgrind"
-	@echo "  clean     - Limpia archivos compilados"
-	@echo "  help      - Muestra esta ayuda"
+	@echo "  debug        - Compila con sanitizers (AddressSanitizer + UndefinedBehaviorSanitizer)"
+	@echo "  debug-basic  - Compila con símbolos de debug (compatible con valgrind)"
+	@echo "  gdb          - Compila y ejecuta con gdb"
+	@echo "  valgrind     - Compila y ejecuta con valgrind (memory leaks)"
+	@echo "  valgrind-full- Valgrind con todos los detalles"
+	@echo "  run-debug    - Ejecuta directamente con sanitizers"
+	@echo "  core-debug   - Permite core dumps para análisis post-mortem"
+	@echo "  stack-debug  - Compila con detección de stack overflow"
+	@echo "  clean        - Limpia archivos compilados"
+	@echo "  help         - Muestra esta ayuda"
+	@echo ""
+	@echo "=== RECOMENDACIONES ==="
+	@echo "Para problemas de memoria:     make valgrind"
+	@echo "Para stack overflow:           make stack-debug"
+	@echo "Para debugging interactivo:    make gdb"
+	@echo "Para detección automática:     make run-debug"
 
-.PHONY: debug gdb valgrind clean help
+.PHONY: debug debug-basic gdb valgrind valgrind-full run-debug core-debug stack-debug clean help

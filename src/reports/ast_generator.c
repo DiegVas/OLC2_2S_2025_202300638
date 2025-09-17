@@ -6,6 +6,48 @@
 // Contador global para IDs únicos
 static int node_counter = 0;
 
+// Estructura para manejar strings dinámicos
+typedef struct
+{
+    char *data;
+    size_t size;
+    size_t capacity;
+} DynamicString;
+
+// Crear un string dinámico
+DynamicString *create_dynamic_string()
+{
+    DynamicString *ds = malloc(sizeof(DynamicString));
+    ds->capacity = 1024; // Empezar con 1KB
+    ds->size = 0;
+    ds->data = malloc(ds->capacity);
+    ds->data[0] = '\0';
+    return ds;
+}
+
+// Agregar texto al string dinámico
+void append_to_dynamic_string(DynamicString *ds, const char *text)
+{
+    size_t text_len = strlen(text);
+
+    // Verificar si necesitamos más espacio
+    while (ds->size + text_len + 1 >= ds->capacity)
+    {
+        ds->capacity *= 2; // Duplicar capacidad
+        ds->data = realloc(ds->data, ds->capacity);
+    }
+
+    strcat(ds->data, text);
+    ds->size += text_len;
+}
+
+// Liberar string dinámico
+void free_dynamic_string(DynamicString *ds)
+{
+    free(ds->data);
+    free(ds);
+}
+
 // Función para crear un nuevo nodo AST
 ASTVal *create_ast_node(const char *value)
 {
@@ -28,7 +70,33 @@ void add_child(ASTVal *parent, ASTVal *child)
     parent->children->head = new_node;
 }
 
-// Función recursiva para recorrer y generar el DOT
+// Función recursiva para recorrer y generar el DOT (versión dinámica)
+void recorrer_nodo_dinamico(ASTVal *nodo, DynamicString *nodos_str, DynamicString *conexiones_str)
+{
+    if (!nodo)
+        return;
+
+    // Agregar definición del nodo
+    char nodo_def[512];
+    sprintf(nodo_def, "%s [label=\"%s\"];\n", nodo->id, nodo->value);
+    append_to_dynamic_string(nodos_str, nodo_def);
+
+    // Recorrer hijos
+    ASTNode *current = nodo->children->head;
+    while (current)
+    {
+        // Agregar conexión
+        char conexion[512];
+        sprintf(conexion, "%s -> %s;\n", nodo->id, current->value->id);
+        append_to_dynamic_string(conexiones_str, conexion);
+
+        // Recorrer recursivamente
+        recorrer_nodo_dinamico(current->value, nodos_str, conexiones_str);
+        current = current->next;
+    }
+}
+
+// Función recursiva para recorrer y generar el DOT (versión antigua - mantener por compatibilidad)
 void recorrer_nodo(FILE *dot_file, ASTVal *nodo, char *nodos_str, char *conexiones_str)
 {
     if (!nodo)
@@ -54,7 +122,7 @@ void recorrer_nodo(FILE *dot_file, ASTVal *nodo, char *nodos_str, char *conexion
     }
 }
 
-// Función para generar DOT desde un nodo raíz
+// Función para generar DOT desde un nodo raíz (versión dinámica mejorada)
 void generar_dot(ASTVal *root)
 {
     FILE *dot_file = fopen("reports/ast.dot", "w");
@@ -67,20 +135,21 @@ void generar_dot(ASTVal *root)
     fprintf(dot_file, "digraph AST {\n");
     fprintf(dot_file, "node [shape=box];\n");
 
-    // Buffers para almacenar nodos y conexiones
-    char *nodos_str = malloc(4096);
-    char *conexiones_str = malloc(4096);
-    nodos_str[0] = '\0';
-    conexiones_str[0] = '\0';
+    // Crear strings dinámicos que crecen automáticamente
+    DynamicString *nodos_str = create_dynamic_string();
+    DynamicString *conexiones_str = create_dynamic_string();
 
-    recorrer_nodo(dot_file, root, nodos_str, conexiones_str);
+    // Usar la función dinámica
+    recorrer_nodo_dinamico(root, nodos_str, conexiones_str);
 
-    fprintf(dot_file, "%s", nodos_str);
-    fprintf(dot_file, "%s", conexiones_str);
+    // Escribir al archivo
+    fprintf(dot_file, "%s", nodos_str->data);
+    fprintf(dot_file, "%s", conexiones_str->data);
     fprintf(dot_file, "}\n");
 
-    free(nodos_str);
-    free(conexiones_str);
+    // Liberar memoria dinámica
+    free_dynamic_string(nodos_str);
+    free_dynamic_string(conexiones_str);
     fclose(dot_file);
 
     // Generar imagen PNG
@@ -90,7 +159,8 @@ void generar_dot(ASTVal *root)
     int result = system(command);
     if (result == 0)
     {
-        printf("✓ AST generado exitosamente: reports/ast.dot y reports/ast.png\n");
+        printf("✓ AST dinámico generado exitosamente: reports/ast.dot y reports/ast.png\n");
+        printf("  El buffer crece automáticamente según el tamaño del AST\n");
     }
     else
     {

@@ -71,6 +71,7 @@ int yyerror(const char *s);
 
 /* Simboloes dobles o mas */
 
+%token PUBLIC STATIC MAIN
 %token LEFT_SHIFT RIGHT_SHIFT
 %token PLUS_ASSIGN MINUS_ASSIGN MULT_ASSIGN DIV_ASSIGN MOD_ASSIGN 
 %token AND_ASSIGN OR_ASSIGN XOR_ASSIGN LEFT_SHIFT_ASSIGN RIGHT_SHIFT_ASSIGN
@@ -156,7 +157,30 @@ program
             }
         }
         $$ = $1;
-     };
+     }
+    | sentences PUBLIC STATIC VOID MAIN '(' ')' '{' sentences '}' {
+        // Código antes del main + main
+        // $1 son las instrucciones antes del main
+        // $9 son las instrucciones dentro del main
+        printf("Programa con main y código previo\n");
+        
+        // Combinar ambas listas de instrucciones
+        if ($1 && $1->head) {
+            InstruccionNode *curr = $1->head;
+            while (curr) {
+                InstruccionList_insert(list_tokens, curr->instr);
+                curr = curr->next;
+            }
+        }
+        if ($9 && $9->head) {
+            InstruccionNode *curr = $9->head;
+            while (curr) {
+                InstruccionList_insert(list_tokens, curr->instr);
+                curr = curr->next;
+            }
+        }
+        $$ = $1;
+    };
 
 sentences
     : sentences sentence
