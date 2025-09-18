@@ -429,6 +429,8 @@ symbol *evaluate_expression(Expression *expr, Context *context)
 
                 if (strcmp(sym->type, "VECTOR") == 0 && sym->vectorValues)
                     return get_legth_of_vector(sym->vectorValues);
+                if (strcmp(sym->type, "MATRIX") == 0 && sym->matrixValues)
+                    return get_legth_of_matrix(sym->matrixValues);
 
                 result->dataType = "UNDEFINED";
                 result->value = "LENGTH operation requires an ARRAY, VECTOR, or MATRIX type with values";
@@ -719,6 +721,8 @@ symbol *evaluate_expression(Expression *expr, Context *context)
                 result_copy->type = strdup(sym->type);
                 result_copy->id = strdup(sym->id);
                 result_copy->environment = strdup(sym->environment);
+
+                fprintf(stderr, "Copying symbol %s of type %s\n", sym->id, sym->type);
 
                 if (strcmp(sym->type, "VECTOR") == 0 && sym->vectorValues)
                 {

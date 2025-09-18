@@ -281,6 +281,25 @@ symbol *get_legth_of_vector(VectorList *vector)
     return result;
 }
 
+symbol *get_legth_of_matrix(MatrixList *matrix)
+{
+    symbol *result = calloc(1, sizeof(symbol));
+    result->dataType = "INTEGER";
+    int row_count = 0;
+    matrixNode *current_row = matrix->head;
+
+    // Contar el número de filas (vectores) en la matriz
+    while (current_row)
+    {
+        row_count++;
+        current_row = current_row->next;
+    }
+
+    result->value = (char *)calloc(20, sizeof(char));
+    sprintf(result->value, "%d", row_count);
+    return result;
+}
+
 // Función recursiva para acceder a arreglos multidimensionales
 symbol *access_multidimensional_array(List *array, ExpressionList *indices, Context *context, int expected_dimensions)
 {

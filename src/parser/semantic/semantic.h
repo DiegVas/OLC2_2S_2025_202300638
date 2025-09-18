@@ -118,6 +118,7 @@ symbol **get_VectorElementPointer(Context *context, Expression *index_exp, Vecto
 symbol **get_MatrixElementPointer(Context *context, Expression *row_exp, Expression *col_exp, MatrixList *matrix);
 
 symbol *get_legth_of_vector(VectorList *vector);
+symbol *get_legth_of_matrix(MatrixList *matrix);
 // Función para acceso a arreglos multidimensionales
 symbol *access_multidimensional_array(List *array, ExpressionList *indices, Context *context, int expected_dimensions);
 
