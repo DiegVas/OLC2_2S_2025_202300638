@@ -1,5 +1,11 @@
 # Manual de Usuario - Compilador JavaLang
 
+
+
+![alt text](image-4.png)
+
+- Diego Alejadandro Vásquez ALonzo - 202300638
+
 ## Tabla de Contenidos
 1. [Introducción](#introducción)
 2. [Requisitos del Sistema](#requisitos-del-sistema)
@@ -48,13 +54,6 @@ sudo apt-get install libglib2.0-dev
 ---
 
 ## Instalación
-
-### Paso 1: Clonar el Repositorio
-```bash
-# Clonar desde el repositorio
-git clone https://github.com/usuario/OLC2_2S_2025_202300638.git
-cd OLC2_2S_2025_202300638
-```
 
 ### Paso 2: Verificar Dependencias
 ```bash
@@ -130,30 +129,7 @@ Archivo  Editar  Compilar  Reportes  Ayuda
 - **Tiempo de ejecución**: Duración del análisis
 
 ### Navegación por la Interfaz
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│ Archivo  Editar  Compilar  Reportes  Ayuda                 │
-├─────────────────────────────────────────────────────────────┤
-│ 📄 📁 💾 │ ▶️ ⏹️ │ 🔍 📊 📋                              │
-├─────────────────────────┬───────────────────────────────────┤
-│                         │  Reportes                         │
-│  Editor de Código       │                                   │
-│                         │  ├─ AST                          │
-│  1  public class Main { │  ├─ Tabla de Símbolos           │
-│  2      public static   │  ├─ Errores                     │
-│  3      void main() {   │  └─ Consola                     │
-│  4          int x = 10; │                                   │
-│  5          System.out  │  Estado: Compilación exitosa     │
-│  6          .println(x);│  Línea: 6, Columna: 16          │
-│  7      }               │  Tiempo: 45ms                     │
-│  8  }                   │                                   │
-│                         │                                   │
-└─────────────────────────┴───────────────────────────────────┤
-│ Línea: 6/8  Columna: 16/16  Estado: OK  Tiempo: 45ms       │
-└─────────────────────────────────────────────────────────────┘
-```
-
+![alt text](image.png)
 ---
 
 ## Creación y Edición de Código
@@ -221,17 +197,8 @@ public class EjemploBasico {
 ### Compilación Paso a Paso
 
 #### Paso 1: Preparar el Código
-Asegúrate de que tu archivo `.usl` tenga la estructura básica:
+Asegúrate de que tu archivo `.usl` tenga la estructura básica.
 
-```java
-// archivo: ejemplo.usl
-public class MiClase {
-    public static void main(String[] args) {
-        int numero = 10;
-        System.out.println("El número es: " + numero);
-    }
-}
-```
 
 #### Paso 2: Ejecutar Compilación
 1. **Botón Ejecutar** ▶️ en la barra de herramientas
@@ -303,6 +270,9 @@ AST - Árbol de Sintaxis Abstracta
 - **Nodos hijos**: Componentes de cada constructo
 - **Hojas**: Valores literales o identificadores
 
+![alt text](image-1.png)
+
+
 #### Archivos Generados
 - `reports/ast.dot`: Formato DOT para Graphviz
 - `reports/ast.png`: Imagen del árbol
@@ -311,16 +281,7 @@ AST - Árbol de Sintaxis Abstracta
 ### 2. Tabla de Símbolos
 
 #### Estructura de la Tabla
-```
-TABLA DE SÍMBOLOS
-═══════════════════════════════════════
-ID    | Nombre  | Tipo    | Ámbito | Línea
-------|---------|---------|--------|-------
-1     | MiClase | class   | global | 1
-2     | main    | method  | MiClase| 2
-3     | args    | String[]| main   | 2
-4     | numero  | int     | main   | 3
-```
+![alt text](image-2.png)
 
 #### Columnas Explicadas
 - **ID**: Identificador único del símbolo
@@ -418,106 +379,6 @@ public class HelloWorld {
    Tiempo: 32ms
    ```
 
-#### AST Generado
-```
-PROGRAM
-└─ CLASS: HelloWorld
-   └─ METHOD: main
-      └─ CALL: println
-         └─ STRING: "¡Hola, mundo!"
-```
-
-### Ejemplo 2: Variables y Operaciones
-
-#### Código Fuente (calculadora.usl)
-```java
-public class Calculadora {
-    public static void main(String[] args) {
-        int a = 10;
-        int b = 5;
-        int suma = a + b;
-        int resta = a - b;
-        int multiplicacion = a * b;
-        int division = a / b;
-        
-        System.out.println("a = " + a);
-        System.out.println("b = " + b);
-        System.out.println("Suma: " + suma);
-        System.out.println("Resta: " + resta);
-        System.out.println("Multiplicación: " + multiplicacion);
-        System.out.println("División: " + division);
-    }
-}
-```
-
-#### Salida Esperada
-```
-a = 10
-b = 5
-Suma: 15
-Resta: 5
-Multiplicación: 50
-División: 2
-```
-
-#### Tabla de Símbolos
-```
-ID | Nombre         | Tipo | Ámbito      | Línea
----|----------------|------|-------------|-------
-1  | Calculadora    | class| global      | 1
-2  | main           | method| Calculadora| 2
-3  | args           | String[]| main     | 2
-4  | a              | int  | main        | 3
-5  | b              | int  | main        | 4
-6  | suma           | int  | main        | 5
-7  | resta          | int  | main        | 6
-8  | multiplicacion | int  | main        | 7
-9  | division       | int  | main        | 8
-```
-
-### Ejemplo 3: Estructuras de Control
-
-#### Código Fuente (control.usl)
-```java
-public class EstructurasControl {
-    public static void main(String[] args) {
-        int numero = 15;
-        
-        // Condicional if-else
-        if (numero > 10) {
-            System.out.println("El número es mayor a 10");
-        } else {
-            System.out.println("El número es menor o igual a 10");
-        }
-        
-        // Ciclo for
-        for (int i = 1; i <= 5; i++) {
-            System.out.println("Iteración: " + i);
-        }
-        
-        // Ciclo while
-        int contador = 0;
-        while (contador < 3) {
-            System.out.println("Contador: " + contador);
-            contador++;
-        }
-    }
-}
-```
-
-### Ejemplo 4: Manejo de Errores Común
-
-#### Código con Error (error_ejemplo.usl)
-```java
-public class EjemploError {
-    public static void main(String[] args) {
-        int x = 10
-        int y = 20;
-        System.out.println(x + y);
-    }
-}
-```
-
 #### Reporte de Error
 ```
 ❌ ERROR SINTÁCTICO
@@ -528,18 +389,7 @@ Contexto: int x = 10
 Sugerencia: Agregar ';' al final de la línea
 ```
 
-#### Código Corregido
-```java
-public class EjemploError {
-    public static void main(String[] args) {
-        int x = 10;  // ← Punto y coma agregado
-        int y = 20;
-        System.out.println(x + y);
-    }
-}
-```
-
----
+![alt text](image-3.png)
 
 ## Resolución de Problemas
 
@@ -661,21 +511,6 @@ System.out.println("Hola");
 - **Sintaxis**: Subconjunto de Java
 - **Compatibilidad**: Específica para este compilador
 
-#### Estructura Típica
-```java
-// archivo.usl
-public class NombreClase {
-    public static void main(String[] args) {
-        // código aquí
-    }
-}
-```
-
-#### Convenciones de Nomenclatura
-- **Clases**: PascalCase (`MiClase`)
-- **Variables**: camelCase (`miVariable`)
-- **Constantes**: UPPER_CASE (`MI_CONSTANTE`)
-- **Archivos**: lowercase con guiones (`mi-archivo.usl`)
 
 ### Características del Lenguaje Soportadas
 
@@ -727,19 +562,6 @@ x += 5; // equivale a x = x + 5;
 
 ## Consejos y Mejores Prácticas
 
-### 1. Organización del Código
-```java
-// ✅ Buena práctica
-public class MiClase {
-    // Comentarios descriptivos
-    private int contador = 0;
-    
-    public void incrementar() {
-        contador++;
-    }
-}
-```
-
 ### 2. Nombres Descriptivos
 ```java
 // ❌ Evitar
@@ -763,52 +585,9 @@ String nombreCompleto = "nombre";
 
 ---
 
-## Información Adicional
-
-### Atajos de Teclado
-```
-Ctrl+N      - Nuevo archivo
-Ctrl+O      - Abrir archivo
-Ctrl+S      - Guardar archivo
-Ctrl+Z      - Deshacer
-Ctrl+Y      - Rehacer
-Ctrl+F      - Buscar
-Ctrl+H      - Reemplazar
-F5          - Compilar y ejecutar
-Ctrl+R      - Solo compilar
-Esc         - Detener ejecución
-```
-
-### Archivos de Configuración
-```
-~/.javalang/config.ini    - Configuración personal
-~/.javalang/themes/       - Temas personalizados
-~/.javalang/templates/    - Plantillas de código
-```
 
 ### Soporte Técnico
 - **Documentación**: Consultar archivos README.md
 - **Ejemplos**: Directorio `test/` contiene archivos de ejemplo
 - **Logs**: Archivos de registro en `~/.javalang/logs/`
 
----
-
-## Historial de Versiones
-
-### v1.0.0 (Actual)
-- Implementación inicial del compilador
-- Interfaz gráfica GTK+ 3.0
-- Soporte para archivos .usl
-- Generación de reportes AST y tabla de símbolos
-
-### Próximas Características
-- Soporte para arrays
-- Implementación de clases y objetos
-- Manejo de excepciones
-- Exportación de reportes a PDF
-
----
-
-*Manual de Usuario - Compilador JavaLang v1.0.0*  
-*Fecha: Septiembre 2025*  
-*Universidad de San Carlos de Guatemala*
