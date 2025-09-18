@@ -9,7 +9,6 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
 
     // * Tabla de simbolos del contexto
     symbol_table *symbolTable_C = context->symbols_context;
-    fprintf(stderr, "Ejecutando instrucción de tipo: ");
 
     // ! Tabla de errores del contexto
     extern ErrorList *list_errors;
@@ -154,6 +153,7 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
         fprintf(stderr, "Declaración de variable detectada para ID: %s\n", instruction->id);
 
         symbol *evaluated_value = evaluate_expression(instruction->value, context);
+
         // Validar que la evaluación no retornó NULL
         if (!evaluated_value)
         {
@@ -205,8 +205,6 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
     }
     case ASSIGNMENT:
     {
-        fprintf(stderr, "Instrucción de asignación detectada para ID: %s\n", instruction->id);
-
         symbol *evaluated_assign = evaluate_expression(instruction->value, context);
 
         // Validar que la evaluación no retornó NULL
@@ -226,8 +224,6 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
             if (SearchID(ctx->symbols_context, instruction->id))
             {
                 symbol *sym_to_update = SearchSymbol(ctx->symbols_context, instruction->id);
-                fprintf(stderr, "Símbolo encontrado para asignación: %s, Tipo: %s, Valor actual: %s y del tipo %s\n",
-                        sym_to_update->id, sym_to_update->dataType, sym_to_update->value, sym_to_update->type);
 
                 if (strcmp(sym_to_update->type, "VECTOR") == 0 && instruction->IndexVector)
                 {
@@ -433,7 +429,7 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
 
         bool condition_value = boolean_value(if_condition_value->value);
 
-        fprintf(stderr, "Valor de la condición IF: %s (bool: %d)\n", if_condition_value->value, condition_value);
+        //  fprintf(stderr, "Valor de la condición IF: %s (bool: %d)\n", if_condition_value->value, condition_value);
 
         Context *ctx_if = calloc(1, sizeof(Context));
         ctx_if->after = context;
@@ -453,7 +449,7 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
         }
         else
         {
-            fprintf(stderr, "Valor de la condición ELSE: %s (bool: %d)\n", if_condition_value->value, condition_value);
+            //     fprintf(stderr, "Valor de la condición ELSE: %s (bool: %d)\n", if_condition_value->value, condition_value);
             bool executed_elseif = false;
             IfNodeList *curr_elseif = else_ifs;
             IfNode *curr_node = curr_elseif ? curr_elseif->head : NULL;
@@ -481,7 +477,7 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
 
             if (!executed_elseif && else_block)
             {
-                fprintf(stderr, "Ejecutando bloque ELSE if\n");
+
                 InstruccionNode *curr = else_block->head;
                 while (curr)
                 {
@@ -875,7 +871,7 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
         InstruccionNode *curr = func_symbol->functionValues->body->head;
         while (curr)
         {
-            fprintf(stderr, "Ejecutando instrucción dentro de función void: %s\n", curr->instr->InstType);
+
             semantic_analysis_execute(curr->instr, ctx_func);
             if (strcmp(ctx_func->nombre, "Return") == 0)
                 break;

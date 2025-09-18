@@ -13,6 +13,27 @@ symbol *perform_comparative_operation(Expression *exprIZQ, Expression *exprDER, 
     ConvertedValue cv_left = convert_operand(left);
     ConvertedValue cv_right = convert_operand(right);
 
+    // Manejar comparaciones con NULL
+    if (strcmp(left->dataType, "NULL") == 0 || strcmp(right->dataType, "NULL") == 0)
+    {
+        if (strcmp(operator, "==") == 0)
+        {
+            result->value = (strcmp(left->dataType, "NULL") == 0 && strcmp(right->dataType, "NULL") == 0) ? strdup("true") : strdup("false");
+        }
+        else if (strcmp(operator, "!=") == 0)
+        {
+            result->value = (strcmp(left->dataType, "NULL") == 0 && strcmp(right->dataType, "NULL") == 0) ? strdup("false") : strdup("true");
+        }
+        else
+        {
+            result->dataType = strdup("UNDEFINED");
+            result->value = strdup("Only '==' and '!=' operators are supported for NULL type");
+            return result;
+        }
+        result->dataType = strdup("BOOLEAN");
+        return result;
+    }
+
     if (strcmp(left->dataType, right->dataType) != 0)
     {
         fprintf(stderr, "Comparative operation requires both operands to be of the same type: left is %s, right is %s\n", left->dataType, right->dataType);

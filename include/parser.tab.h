@@ -90,55 +90,56 @@ extern int yydebug;
     BOOL = 272,                    /* BOOL  */
     FINAL = 273,                   /* FINAL  */
     PRINTLN = 274,                 /* PRINTLN  */
-    IF = 275,                      /* IF  */
-    ELSE = 276,                    /* ELSE  */
-    SWITCH = 277,                  /* SWITCH  */
-    CASE = 278,                    /* CASE  */
-    BREAK = 279,                   /* BREAK  */
-    DEFAULT = 280,                 /* DEFAULT  */
-    CONTINUE = 281,                /* CONTINUE  */
-    WHILE = 282,                   /* WHILE  */
-    FOR = 283,                     /* FOR  */
-    EQUALS_OP = 284,               /* EQUALS_OP  */
-    NEW = 285,                     /* NEW  */
-    INTEGER_OBJ = 286,             /* INTEGER_OBJ  */
-    PARSEINT = 287,                /* PARSEINT  */
-    DOUBLE_OBJ = 288,              /* DOUBLE_OBJ  */
-    PARSEDOUBLE = 289,             /* PARSEDOUBLE  */
-    FLOAT_OBJ = 290,               /* FLOAT_OBJ  */
-    PARSEFLOAT = 291,              /* PARSEFLOAT  */
-    VALUEOF = 292,                 /* VALUEOF  */
-    JOIN = 293,                    /* JOIN  */
-    RETURN = 294,                  /* RETURN  */
-    VOID = 295,                    /* VOID  */
-    PUBLIC = 296,                  /* PUBLIC  */
-    STATIC = 297,                  /* STATIC  */
-    MAIN = 298,                    /* MAIN  */
-    LEFT_SHIFT = 299,              /* LEFT_SHIFT  */
-    RIGHT_SHIFT = 300,             /* RIGHT_SHIFT  */
-    PLUS_ASSIGN = 301,             /* PLUS_ASSIGN  */
-    MINUS_ASSIGN = 302,            /* MINUS_ASSIGN  */
-    MULT_ASSIGN = 303,             /* MULT_ASSIGN  */
-    DIV_ASSIGN = 304,              /* DIV_ASSIGN  */
-    MOD_ASSIGN = 305,              /* MOD_ASSIGN  */
-    AND_ASSIGN = 306,              /* AND_ASSIGN  */
-    OR_ASSIGN = 307,               /* OR_ASSIGN  */
-    XOR_ASSIGN = 308,              /* XOR_ASSIGN  */
-    LEFT_SHIFT_ASSIGN = 309,       /* LEFT_SHIFT_ASSIGN  */
-    RIGHT_SHIFT_ASSIGN = 310,      /* RIGHT_SHIFT_ASSIGN  */
-    EQUALS = 311,                  /* EQUALS  */
-    NOT_EQUALS = 312,              /* NOT_EQUALS  */
-    AND = 313,                     /* AND  */
-    OR = 314,                      /* OR  */
-    NOT = 315,                     /* NOT  */
-    GREATER_EQUALS = 316,          /* GREATER_EQUALS  */
-    LESS_EQUALS = 317,             /* LESS_EQUALS  */
-    INCREMENT = 318,               /* INCREMENT  */
-    ARRAYS = 319,                  /* ARRAYS  */
-    INDEXOF = 320,                 /* INDEXOF  */
-    LENGTH = 321,                  /* LENGTH  */
-    ADD = 322,                     /* ADD  */
-    UMINUS = 323                   /* UMINUS  */
+    NULL_EXP = 275,                /* NULL_EXP  */
+    IF = 276,                      /* IF  */
+    ELSE = 277,                    /* ELSE  */
+    SWITCH = 278,                  /* SWITCH  */
+    CASE = 279,                    /* CASE  */
+    BREAK = 280,                   /* BREAK  */
+    DEFAULT = 281,                 /* DEFAULT  */
+    CONTINUE = 282,                /* CONTINUE  */
+    WHILE = 283,                   /* WHILE  */
+    FOR = 284,                     /* FOR  */
+    EQUALS_OP = 285,               /* EQUALS_OP  */
+    NEW = 286,                     /* NEW  */
+    INTEGER_OBJ = 287,             /* INTEGER_OBJ  */
+    PARSEINT = 288,                /* PARSEINT  */
+    DOUBLE_OBJ = 289,              /* DOUBLE_OBJ  */
+    PARSEDOUBLE = 290,             /* PARSEDOUBLE  */
+    FLOAT_OBJ = 291,               /* FLOAT_OBJ  */
+    PARSEFLOAT = 292,              /* PARSEFLOAT  */
+    VALUEOF = 293,                 /* VALUEOF  */
+    JOIN = 294,                    /* JOIN  */
+    RETURN = 295,                  /* RETURN  */
+    VOID = 296,                    /* VOID  */
+    PUBLIC = 297,                  /* PUBLIC  */
+    STATIC = 298,                  /* STATIC  */
+    MAIN = 299,                    /* MAIN  */
+    LEFT_SHIFT = 300,              /* LEFT_SHIFT  */
+    RIGHT_SHIFT = 301,             /* RIGHT_SHIFT  */
+    PLUS_ASSIGN = 302,             /* PLUS_ASSIGN  */
+    MINUS_ASSIGN = 303,            /* MINUS_ASSIGN  */
+    MULT_ASSIGN = 304,             /* MULT_ASSIGN  */
+    DIV_ASSIGN = 305,              /* DIV_ASSIGN  */
+    MOD_ASSIGN = 306,              /* MOD_ASSIGN  */
+    AND_ASSIGN = 307,              /* AND_ASSIGN  */
+    OR_ASSIGN = 308,               /* OR_ASSIGN  */
+    XOR_ASSIGN = 309,              /* XOR_ASSIGN  */
+    LEFT_SHIFT_ASSIGN = 310,       /* LEFT_SHIFT_ASSIGN  */
+    RIGHT_SHIFT_ASSIGN = 311,      /* RIGHT_SHIFT_ASSIGN  */
+    EQUALS = 312,                  /* EQUALS  */
+    NOT_EQUALS = 313,              /* NOT_EQUALS  */
+    AND = 314,                     /* AND  */
+    OR = 315,                      /* OR  */
+    NOT = 316,                     /* NOT  */
+    GREATER_EQUALS = 317,          /* GREATER_EQUALS  */
+    LESS_EQUALS = 318,             /* LESS_EQUALS  */
+    INCREMENT = 319,               /* INCREMENT  */
+    ARRAYS = 320,                  /* ARRAYS  */
+    INDEXOF = 321,                 /* INDEXOF  */
+    LENGTH = 322,                  /* LENGTH  */
+    ADD = 323,                     /* ADD  */
+    UMINUS = 324                   /* UMINUS  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -166,7 +167,7 @@ union YYSTYPE
     paramsList* paramlist;
     DimensionsList* dimlist;
 
-#line 170 "build/parser.tab.h"
+#line 171 "build/parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

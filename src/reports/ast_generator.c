@@ -159,8 +159,6 @@ void generar_dot(ASTVal *root)
     int result = system(command);
     if (result == 0)
     {
-        printf("✓ AST dinámico generado exitosamente: reports/ast.dot y reports/ast.png\n");
-        printf("  El buffer crece automáticamente según el tamaño del AST\n");
     }
     else
     {

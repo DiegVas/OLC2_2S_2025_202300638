@@ -3,8 +3,6 @@
 
 ASTVal *ast_execute(Instruccion *instr)
 {
-    fprintf(stderr, "Generando nodo AST para instrucción de tipo: %s\n", instr->InstType);
-
     ExecuteType instruction_t = get_instruction_type(instr->InstType);
 
     switch (instruction_t)
@@ -149,17 +147,7 @@ ASTVal *ast_execute(Instruccion *instr)
         ASTVal *node = create_ast_node("VOID_CALL");
         add_child(node, create_ast_node(instr->id ? instr->id : "NULL"));
 
-        if (instr->indexList)
-        {
-            ExpressionNode *current = instr->indexList->head;
-            while (current)
-            {
-                add_child(node, ast_evaluate(current->expr));
-                current = current->next;
-            }
-        }
-
-        return node;
+              return node;
     }
     case BLOCK_STATEMENT:
     {

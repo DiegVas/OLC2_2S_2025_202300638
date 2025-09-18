@@ -80,7 +80,6 @@ VectorList *evaluate_vector(char *dataType, VectorList *vec, Context *evaluateCo
             if (da != NULL)
             {
                 da = apply_casting_auto(da, dataType);
-                fprintf(stderr, "Evaluated vector expression: Type=%s, Value=%s\n", da->dataType, da->value);
                 current->value = da;
             }
             else

@@ -326,6 +326,4 @@ void update_ast_report()
 
     // Cargar la imagen en el widget
     gtk_image_set_from_file(GTK_IMAGE(global_widgets->ast_view), png_filename);
-
-    printf("AST actualizado en la interfaz y archivos generados en reports/\n");
 }

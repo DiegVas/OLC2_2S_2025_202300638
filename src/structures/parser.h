@@ -318,6 +318,8 @@ List *copy_List(List *original);
 
 ExpressionList *create_expression_list();
 void ExpressionList_add(ExpressionList *list, Expression *expr);
+int ExpressionList_size(ExpressionList *list);
+Expression *ExpressionList_get(ExpressionList *list, int index);
 
 IfNodeList *createIfNodeList();
 void insertIfNode(IfNodeList *list, IfData *IfData);

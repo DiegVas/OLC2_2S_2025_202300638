@@ -11,6 +11,8 @@ typedef enum
     TYPE_FLOAT = 2,
     TYPE_DOUBLE = 3,
     TYPE_STRING = 4,
+    TYPE_NULL = 5,
+    TYPE_UNDEFINED = 6
 
 } OperativeType;
 
@@ -41,6 +43,7 @@ typedef enum ExecuteType
 
 typedef enum ExpressionType
 {
+    EXP_NULL,
     EXP_INTEGER,
     EXP_FLOAT,
     EXP_STRING,

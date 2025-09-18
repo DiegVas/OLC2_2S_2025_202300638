@@ -56,6 +56,8 @@ bool boolean_value(const char *bool_str)
 ExpressionType
 get_expression_type(const char *type_str)
 {
+    if (strcmp(type_str, "NULL") == 0)
+        return EXP_NULL;
     if (strcmp(type_str, "ID") == 0)
         return EXP_ID;
     if (strcmp(type_str, "INTEGER") == 0)

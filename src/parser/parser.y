@@ -62,6 +62,7 @@ int yyerror(const char *s);
 /* Palabras reservadas */
 
 %token <sval> INT STRING CHAR FLOAT DOUBLE BOOL FINAL PRINTLN
+%token NULL_EXP
 %token IF ELSE SWITCH CASE BREAK DEFAULT CONTINUE
 %token WHILE FOR
 %token EQUALS_OP
@@ -224,6 +225,15 @@ instruction:
         instP->line = @1.first_line;
         instP->column = @1.first_column;
         $$ = instP; }
+    | ID '(' ')' {
+        fprintf(stderr, "Función void llamada: %s\n", $1);
+        Instruccion* instP = (Instruccion*)malloc(sizeof(Instruccion));
+        instP->InstType = "VOID_CALL";
+        instP->id = $1;
+        instP->line = @1.first_line;
+        instP->column = @1.first_column;
+        $$ = instP;
+    }
     | declaration {
         $1->InstType = "DECLARATION";
         $1->line = @1.first_line;
@@ -304,14 +314,7 @@ instruction:
         instP->column = @1.first_column;
         $$ = instP;
     }
-    | ID '(' ')' {
-        Instruccion* instP = (Instruccion*)malloc(sizeof(Instruccion));
-        instP->InstType = "VOID_CALL";
-        instP->id = $1;
-        instP->line = @1.first_line;
-        instP->column = @1.first_column;
-        $$ = instP;
-    }
+    
     ;
 
 //* Asignacion de valores a variables ya existentes
@@ -323,30 +326,24 @@ assignment:
         instP->value = $3;
         instP->column = @1.first_column;
         $$ = instP; }
-    //* ID[expression] = expression
-    | ID '[' expression ']' '=' expression {
-        Instruccion* instP = (Instruccion*)malloc(sizeof(Instruccion));
-        instP->id = $1;
-        instP->IndexVector = $3;
-        instP->value = $6;
-        instP->column = @1.first_column;
-        $$ = instP; }
-    //* ID[expression][expression] = expression
-    | ID '[' expression ']' '[' expression ']' '=' expression {
-        Instruccion* instP = (Instruccion*)malloc(sizeof(Instruccion));
-        instP->id = $1;
-        instP->IndexVector = $6;
-        instP->IndexMatrix = $3;
-        instP->value = $9;
-        instP->column = @1.first_column;
-        $$ = instP; }
-    //* ID[][][]... = expression (arreglos multidimensionales)
+    //* ID[expression][expression]... = expression (asignación a arrays multidimensionales)
     | ID dimensions_expressions '=' expression {
         Instruccion* instP = (Instruccion*)malloc(sizeof(Instruccion));
         instP->id = $1;
-        instP->indexList = $2;
-        instP->value = $4;
         instP->column = @1.first_column;
+        instP->value = $4;
+        
+        // Manejar según el número de dimensiones
+        int size = ExpressionList_size($2);
+        if (size == 1) {
+            instP->IndexVector = ExpressionList_get($2, 0);
+        } else if (size == 2) {
+            instP->IndexVector = ExpressionList_get($2, 1); // Segunda dimensión
+            instP->IndexMatrix = ExpressionList_get($2, 0); // Primera dimensión
+        } else {
+            instP->indexList = $2; // Múltiples dimensiones
+        }
+        
         $$ = instP; }
     //* ID += expression
     | assignment_expression PLUS_ASSIGN expression {
@@ -653,6 +650,12 @@ primitive_values:
         exp->type = strdup("CHARACTER");
         exp->value = strdup($1);
         $$ = exp; }
+    | NULL_EXP { 
+        Expression* exp = (Expression*)calloc(1, sizeof(Expression));
+        exp->type = strdup("NULL");
+        exp->value = strdup("null");
+        $$ = exp; }
+    ;
 
 
 
@@ -887,29 +890,25 @@ expression:
         exp->value = strdup($1);
         exp->left = $5;
         $$ = exp; }
-    //* id[]
-    | ID '[' expression ']' {
-        Expression* exp = (Expression*)calloc(1, sizeof(Expression));
-        exp->type = "VECTOR_ACCESS";
-        exp->value = $1;
-        exp->left = $3;
-        $$ = exp; }
-    //* id[][]
-    | ID '[' expression ']' '[' expression ']' {
-        Expression* exp = (Expression*)calloc(1, sizeof(Expression));
-        exp->type = "MATRIX_ACCESS";
-        exp->value = $1;
-        exp->left = $3;
-        exp->right = $6;
-        $$ = exp;
-    }
-    //* ID[][]......
+    //* ID[expression][expression]... - Acceso a arrays multidimensionales
     | ID dimensions_expressions {
-        fprintf(stderr,"Dimensiones de acceso");
         Expression* exp = (Expression*)calloc(1, sizeof(Expression));
-        exp->type = "ARRAY_ACCESS";
+        
+        // Determinar el tipo según el número de dimensiones
+        int size = ExpressionList_size($2);
+        if (size == 1) {
+            exp->type = "VECTOR_ACCESS";
+            exp->left = ExpressionList_get($2, 0); // Primera dimensión
+        } else if (size == 2) {
+            exp->type = "MATRIX_ACCESS";
+            exp->left = ExpressionList_get($2, 0);  // Primera dimensión
+            exp->right = ExpressionList_get($2, 1); // Segunda dimensión
+        } else {
+            exp->type = "ARRAY_ACCESS";
+            exp->list = $2; // Múltiples dimensiones
+        }
+        
         exp->value = $1;
-        exp->list = $2;
         $$ = exp;
     }
     //* id(params)
@@ -1149,8 +1148,22 @@ paramsList:
         addParam(paramList, $1, $2);
         $$ = paramList;
      }
+    | primitive_types '[' ']' ID {
+        paramsList* paramList = createParamsList();
+        // Puedes usar un tipo especial, por ejemplo: "VECTOR_INTEGER"
+        char* vectorType = (char*)malloc(strlen($1) + 8);
+        sprintf(vectorType, "VECTOR_%s", $1);
+        addParam(paramList, vectorType, $4);
+        $$ = paramList;
+     }
     | paramsList ',' primitive_types ID {
         addParam($1, $3, $4);
+        $$ = $1;
+     }
+    | paramsList ',' primitive_types '[' ']' ID {
+        char* vectorType = (char*)malloc(strlen($3) + 8);
+        sprintf(vectorType, "VECTOR_%s", $3);
+        addParam($1, vectorType, $6);
         $$ = $1;
      }
 

@@ -140,6 +140,10 @@ symbol *evaluate_expression(Expression *expr, Context *context)
         result->value = strcmp(expr->value, "UNDEFINED") == 0 ? strdup("0.0") : strdup(expr->value);
         result->dataType = "DOUBLE";
         break;
+    case EXP_NULL:
+        result->value = strdup("NULL");
+        result->dataType = "NULL";
+        break;
     case EXP_SUM:
         return perform_arithmetic_operation(exprIZQ, exprDER, context, '+');
     case EXP_SUBTRACT:
@@ -205,7 +209,7 @@ symbol *evaluate_expression(Expression *expr, Context *context)
     {
         symbol *left = evaluate_expression(expr->left, context);
 
-        if (left->dataType != "BOOLEAN")
+        if (left == NULL || strcmp(left->dataType, "BOOLEAN") != 0)
         {
             result->dataType = strdup("UNDEFINED");
             result->value = strdup("Logical NOT operation requires a BOOLEAN type");
@@ -230,7 +234,7 @@ symbol *evaluate_expression(Expression *expr, Context *context)
     case EXP_PARSEINT:
     {
         symbol *to_parse = evaluate_expression(expr->left, context);
-        if (strcmp(to_parse->dataType, "STRING") != 0)
+        if (to_parse == NULL || strcmp(to_parse->dataType, "STRING") != 0)
         {
             result->dataType = "UNDEFINED";
             result->value = "PARSEINT operation requires a STRING type";
@@ -257,7 +261,7 @@ symbol *evaluate_expression(Expression *expr, Context *context)
     case EXP_PARSEDOUBLE:
     {
         symbol *to_parse = evaluate_expression(expr->left, context);
-        if (strcmp(to_parse->dataType, "STRING") != 0)
+        if (to_parse == NULL || strcmp(to_parse->dataType, "STRING") != 0)
         {
             result->dataType = "UNDEFINED";
             result->value = "PARSEDOUBLE operation requires a STRING type";
@@ -284,7 +288,7 @@ symbol *evaluate_expression(Expression *expr, Context *context)
     case EXP_PARSEFLOAT:
     {
         symbol *to_parse = evaluate_expression(expr->left, context);
-        if (strcmp(to_parse->dataType, "STRING") != 0)
+        if (to_parse == NULL || strcmp(to_parse->dataType, "STRING") != 0)
         {
             result->dataType = "UNDEFINED";
             result->value = "PARSEFLOAT operation requires a STRING type";
@@ -666,13 +670,19 @@ symbol *evaluate_expression(Expression *expr, Context *context)
         result->value = "Array variable not found";
         return result;
     }
-
     case EXP_ID:
     {
         Context *ctx_search = context;
 
         while (ctx_search)
         {
+            // Verificar que ctx_search sea válido antes de usar
+            if (ctx_search->symbols_context == NULL)
+            {
+                ctx_search = ctx_search->after;
+                continue;
+            }
+
             if (SearchID(ctx_search->symbols_context, expr->value))
             {
                 symbol *sym = SearchSymbol(ctx_search->symbols_context, expr->value);
@@ -689,6 +699,12 @@ symbol *evaluate_expression(Expression *expr, Context *context)
                 return result_copy;
             }
 
+            // Verificar que after sea válido antes de avanzar
+            if (ctx_search->after == (Context *)0xbebebebebebebebe ||
+                ctx_search->after == NULL)
+            {
+                break;
+            }
             ctx_search = ctx_search->after;
         }
         result->dataType = "UNDEFINED";
@@ -734,7 +750,7 @@ symbol *evaluate_expression(Expression *expr, Context *context)
                 while (param_node && current_param)
                 {
                     symbol *param_value = evaluate_expression(current_param->expr, context);
-                    if (strcmp(param_value->dataType, "UNDEFINED") == 0)
+                    if (param_value == NULL || strcmp(param_value->dataType, "UNDEFINED") == 0)
                     {
                         result->dataType = "UNDEFINED";
                         result->value = "Error evaluating function parameter expression";

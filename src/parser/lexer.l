@@ -154,6 +154,8 @@ BREAK_LINE \n
 
 "char" return CHAR;
 
+"null" return NULL_EXP;
+
 "final" return FINAL;
 
 "if" return IF;

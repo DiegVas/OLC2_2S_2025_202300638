@@ -1,13 +1,26 @@
 #include "semantic.h"
+#include <math.h>
 
 ConvertedValue convert_operand(symbol *operand)
 {
     ConvertedValue cv = {0};
 
+    if (operand == NULL)
+    {
+        cv.result_type = TYPE_UNDEFINED;
+        return cv;
+    }
+
     if (strcmp(operand->dataType, "STRING") == 0)
     {
         cv.str_value = operand->value;
         cv.result_type = TYPE_STRING;
+    }
+    else if (strcmp(operand->dataType, "NULL") == 0)
+    {
+        cv.str_value = "null";
+        cv.num_value = 0;
+        cv.result_type = TYPE_NULL;
     }
     else if (strcmp(operand->dataType, "INTEGER") == 0)
     {
@@ -35,8 +48,35 @@ symbol *perform_arithmetic_operation(Expression *exp_left, Expression *exp_right
     symbol *left = evaluate_expression(exp_left, context);
     symbol *right = evaluate_expression(exp_right, context);
 
+    // Verificar que ambos operandos sean válidos
+    if (left == NULL || right == NULL)
+    {
+        symbol *result = (symbol *)calloc(1, sizeof(symbol));
+        result->dataType = strdup("UNDEFINED");
+        result->value = strdup("Error: null operand in arithmetic operation");
+        return result;
+    }
+
     ConvertedValue cv_left = convert_operand(left);
     ConvertedValue cv_right = convert_operand(right);
+
+    // Verificar que la conversión fue exitosa
+    if (cv_left.result_type == TYPE_UNDEFINED || cv_right.result_type == TYPE_UNDEFINED)
+    {
+        symbol *result = (symbol *)calloc(1, sizeof(symbol));
+        result->dataType = strdup("UNDEFINED");
+        result->value = strdup("Error: invalid operand types in arithmetic operation");
+        return result;
+    }
+
+    // Verificar operaciones con NULL
+    if (cv_left.result_type == TYPE_NULL || cv_right.result_type == TYPE_NULL)
+    {
+        symbol *result = (symbol *)calloc(1, sizeof(symbol));
+        result->dataType = strdup("NULL");
+        result->value = strdup("null");
+        return result;
+    }
 
     symbol *result = (symbol *)calloc(1, sizeof(symbol));
 
@@ -77,7 +117,12 @@ symbol *perform_arithmetic_operation(Expression *exp_left, Expression *exp_right
             result->value = strdup("Division by zero");
             return result;
         }
+
         final_result = cv_left.num_value / cv_right.num_value;
+
+        if (final_result != floor(final_result))
+            result_type = TYPE_DOUBLE; // Promover a DOUBLE si hay decimales
+
         break;
     case '%':
         if (cv_right.num_value == 0)
@@ -97,6 +142,9 @@ symbol *perform_arithmetic_operation(Expression *exp_left, Expression *exp_right
 
     // Formatear resultado según el tipo
     result->value = (char *)calloc(50, sizeof(char)); // Suficiente espacio
+
+    fprintf(stderr, "Final result before formatting: %f\n", final_result); // Debug line
+    fprintf(stderr, "Result type: %d\n", result_type);                     // Debug line
 
     switch (result_type)
     {

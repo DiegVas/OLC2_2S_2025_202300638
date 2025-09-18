@@ -59,11 +59,11 @@ WARNINGS = -Wno-deprecated-declarations
 
 # Target principal para debugging
 debug: $(BUILD)/parser.tab.c $(BUILD)/lexer.yy.c $(MAIN) $(UI_FILES) $(STRUCTURES_FILES) $(PARSER_FILES) $(REPORTS_FILES)
-	$(CC) -I$(INC) -I$(UI_DIR) $(DEBUG_FLAGS) $(WARNINGS) $(BUILD)/parser.tab.c $(BUILD)/lexer.yy.c $(MAIN) $(UI_FILES) $(STRUCTURES_FILES) $(PARSER_FILES) $(REPORTS_FILES) -o $(BUILD)/main_debug $(GTK_FLAGS) -luuid
+	$(CC) -I$(INC) -I$(UI_DIR) $(DEBUG_FLAGS) $(WARNINGS) $(BUILD)/parser.tab.c $(BUILD)/lexer.yy.c $(MAIN) $(UI_FILES) $(STRUCTURES_FILES) $(PARSER_FILES) $(REPORTS_FILES) -o $(BUILD)/main_debug $(GTK_FLAGS) -luuid -lm
 
 # Target para debugging básico (sin sanitizers para usar con valgrind)
 debug-basic: $(BUILD)/parser.tab.c $(BUILD)/lexer.yy.c $(MAIN) $(UI_FILES) $(STRUCTURES_FILES) $(PARSER_FILES) $(REPORTS_FILES)
-	$(CC) -I$(INC) -I$(UI_DIR) -g -O0 -DDEBUG $(WARNINGS) $(BUILD)/parser.tab.c $(BUILD)/lexer.yy.c $(MAIN) $(UI_FILES) $(STRUCTURES_FILES) $(PARSER_FILES) $(REPORTS_FILES) -o $(BUILD)/main_debug_basic $(GTK_FLAGS) -luuid
+	$(CC) -I$(INC) -I$(UI_DIR) -g -O0 -DDEBUG $(WARNINGS) $(BUILD)/parser.tab.c $(BUILD)/lexer.yy.c $(MAIN) $(UI_FILES) $(STRUCTURES_FILES) $(PARSER_FILES) $(REPORTS_FILES) -o $(BUILD)/main_debug_basic $(GTK_FLAGS) -luuid -lm
 
 # Generación de archivos del parser y lexer (igual que el Makefile original)
 $(BUILD)/parser.tab.c $(BUILD)/parser.tab.h: $(PARSER)
@@ -95,7 +95,7 @@ core-debug: debug-basic
 
 # Target para debugging de stack overflows
 stack-debug: $(BUILD)/parser.tab.c $(BUILD)/lexer.yy.c $(MAIN) $(UI_FILES) $(STRUCTURES_FILES) $(PARSER_FILES) $(REPORTS_FILES)
-	$(CC) -I$(INC) -I$(UI_DIR) -g -O0 -DDEBUG -fstack-usage -Wstack-usage=8192 $(WARNINGS) $(BUILD)/parser.tab.c $(BUILD)/lexer.yy.c $(MAIN) $(UI_FILES) $(STRUCTURES_FILES) $(PARSER_FILES) $(REPORTS_FILES) -o $(BUILD)/main_stack $(GTK_FLAGS) -luuid
+	$(CC) -I$(INC) -I$(UI_DIR) -g -O0 -DDEBUG -fstack-usage -Wstack-usage=8192 $(WARNINGS) $(BUILD)/parser.tab.c $(BUILD)/lexer.yy.c $(MAIN) $(UI_FILES) $(STRUCTURES_FILES) $(PARSER_FILES) $(REPORTS_FILES) -o $(BUILD)/main_stack $(GTK_FLAGS) -luuid -lm
 
 # Limpieza
 clean:
