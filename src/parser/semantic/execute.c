@@ -392,15 +392,29 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
             return;
         }
 
-        // Validar que dataType no sea NULL antes de usar strcmp
-        if (!print_value->dataType)
+        // Validar que dataType no sea NULL y sea un puntero válido antes de usar strcmp
+        if (!print_value->dataType ||
+            print_value->dataType == (char *)0xbebebebebebebebe ||
+            strlen(print_value->dataType) == 0)
         {
-            Error_exists("Print expression has NULL dataType", context->nombre, instruction);
+            Error_exists("Print expression has invalid dataType", context->nombre, instruction);
             return;
         }
 
         if (strcmp(print_value->dataType, "UNDEFINED") == 0)
-            return Error_exists(print_value->value, context->nombre, instruction);
+        {
+            if (print_value->value && print_value->value != (char *)0xbebebebebebebebe)
+                return Error_exists(print_value->value, context->nombre, instruction);
+            else
+                return Error_exists("Undefined expression with corrupted value", context->nombre, instruction);
+        }
+
+        // Verificar que value sea válido antes de usarlo
+        if (!print_value->value || print_value->value == (char *)0xbebebebebebebebe)
+        {
+            Error_exists("Print expression has invalid value", context->nombre, instruction);
+            return;
+        }
 
         // Si es string, procesar secuencias de escape
         if (strcmp(print_value->dataType, "STRING") == 0)

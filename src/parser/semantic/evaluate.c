@@ -4,11 +4,30 @@
 
 symbol *evaluate_expression(Expression *expr, Context *context)
 {
+    // Verificar que expr no sea NULL
+    if (!expr || !context)
+    {
+        symbol *error_result = (symbol *)calloc(1, sizeof(symbol));
+        error_result->value = strdup("NULL expression or context");
+        error_result->dataType = strdup("UNDEFINED");
+        error_result->type = strdup("ERROR");
+        error_result->environment = strdup("ERROR");
+        error_result->id = strdup("ERROR");
+        return error_result;
+    }
+
     ExpressionType type = get_expression_type(expr->type);
 
     extern symbol_table *SymbolTable_General;
 
     symbol *result = (symbol *)calloc(1, sizeof(symbol));
+
+    // Inicializar siempre los campos básicos para evitar punteros corruptos
+    result->value = strdup("UNDEFINED");
+    result->dataType = strdup("UNDEFINED");
+    result->type = strdup("UNDEFINED");
+    result->environment = strdup("UNDEFINED");
+    result->id = strdup("UNDEFINED");
 
     Expression *exprIZQ = expr->left;
     Expression *exprDER = expr->right;
@@ -16,6 +35,8 @@ symbol *evaluate_expression(Expression *expr, Context *context)
     switch (type)
     {
     case EXP_INTEGER:
+        free(result->value);
+        free(result->dataType);
         result->value = strcmp(expr->value, "UNDEFINED") == 0 ? strdup("0") : strdup(expr->value);
         result->dataType = strdup("INTEGER");
         break;
@@ -403,6 +424,9 @@ symbol *evaluate_expression(Expression *expr, Context *context)
             {
                 symbol *sym = SearchSymbol(ctx_search->symbols_context, expr->value);
 
+                fprintf(stderr, "Getting length of symbol %s of type %s\n", sym->id, sym->type);
+                fprintf(stderr, "Vector values: %p\n", (void *)sym->vectorValues);
+
                 if (strcmp(sym->type, "VECTOR") == 0 && sym->vectorValues)
                     return get_legth_of_vector(sym->vectorValues);
 
@@ -696,6 +720,15 @@ symbol *evaluate_expression(Expression *expr, Context *context)
                 result_copy->id = strdup(sym->id);
                 result_copy->environment = strdup(sym->environment);
 
+                if (strcmp(sym->type, "VECTOR") == 0 && sym->vectorValues)
+                {
+                    result_copy->vectorValues = copy_VectorList(sym->vectorValues);
+                }
+                else if (strcmp(sym->type, "MATRIX") == 0 && sym->matrixValues)
+                {
+                    result_copy->matrixValues = copy_MatrixList(sym->matrixValues);
+                }
+
                 return result_copy;
             }
 
@@ -757,28 +790,63 @@ symbol *evaluate_expression(Expression *expr, Context *context)
                         return result;
                     }
 
-                    if (strcmp(param_value->dataType, param_node->type) != 0)
+                    if (strcmp(param_value->type, "VECTOR") == 0)
+                    {
+
+                        size_t len_val = strlen(param_value->type) + strlen("_") + strlen(param_value->dataType) + 1;
+                        char *full_type_val = (char *)calloc(len_val, sizeof(char));
+                        snprintf(full_type_val, len_val, "%s_%s", param_value->type, param_value->dataType);
+
+                        if (strcmp(full_type_val, param_node->type) != 0)
+                        {
+                            result->dataType = "UNDEFINED";
+                            result->value = "Function parameter type mismatch";
+                            return result;
+                        }
+
+                        fprintf(stderr, "--------------------Vector values: %p\n", (void *)param_value->vectorValues);
+
+                        // Insertar el parámetro en el contexto de la función
+                        symbol *param_symbol = (symbol *)calloc(1, sizeof(symbol));
+                        param_symbol->id = param_node->id;
+                        param_symbol->dataType = param_value->dataType;
+                        param_symbol->type = param_value->type;
+                        param_symbol->value = param_value->value;
+                        param_symbol->vectorValues = param_value->vectorValues;
+                        param_symbol->environment = ctx_func->nombre;
+                        param_symbol->line = &(current_param->expr->line);
+                        param_symbol->column = &(current_param->expr->column);
+
+                        Symbol_table_insert(ctx_func->symbols_context, param_symbol);
+
+                        param_node = param_node->next;
+                        current_param = current_param->next;
+                        param_index++;
+                    }
+                    else if (strcmp(param_value->dataType, param_node->type) == 0)
+                    {
+                        // Insertar el parámetro en el contexto de la función
+                        symbol *param_symbol = (symbol *)calloc(1, sizeof(symbol));
+                        param_symbol->id = param_node->id;
+                        param_symbol->dataType = param_value->dataType;
+                        param_symbol->type = strdup("PARAMETER");
+                        param_symbol->value = param_value->value;
+                        param_symbol->environment = ctx_func->nombre;
+                        param_symbol->line = &(current_param->expr->line);
+                        param_symbol->column = &(current_param->expr->column);
+
+                        Symbol_table_insert(ctx_func->symbols_context, param_symbol);
+
+                        param_node = param_node->next;
+                        current_param = current_param->next;
+                        param_index++;
+                    }
+                    else
                     {
                         result->dataType = "UNDEFINED";
                         result->value = "Function parameter type mismatch";
                         return result;
                     }
-
-                    // Insertar el parámetro en el contexto de la función
-                    symbol *param_symbol = (symbol *)calloc(1, sizeof(symbol));
-                    param_symbol->id = param_node->id;
-                    param_symbol->dataType = param_value->dataType;
-                    param_symbol->type = "PARAMETER";
-                    param_symbol->value = param_value->value;
-                    param_symbol->environment = ctx_func->nombre;
-                    param_symbol->line = &(current_param->expr->line);
-                    param_symbol->column = &(current_param->expr->column);
-
-                    Symbol_table_insert(ctx_func->symbols_context, param_symbol);
-
-                    param_node = param_node->next;
-                    current_param = current_param->next;
-                    param_index++;
                 }
 
                 if (current_param || param_node)
