@@ -450,7 +450,7 @@ void semantic_analysis_execute(Instruccion *instruction, Context *context)
         ctx_if->symbols_context = Symbol_table_create();
         ctx_if->nombre = "If";
 
-        if (condition_value)
+        if (!condition_value)
         {
             InstruccionNode *curr = if_block->head;
             while (curr)

@@ -1,16 +1,12 @@
 digraph AST {
 node [shape=box];
 node0 [label="INICIO"];
-node9 [label="FOR"];
-node8 [label="VECTOR_DECLARATION"];
-node6 [label="VECTOR_DECLARATION"];
-node4 [label="MATRIX_DECLARATION"];
-node1 [label="PRINTLN"];
-node2 [label="\n--- SISTEMA DE HORARIOS (MULTIDIMENSIONAL) ---"];
-node0 -> node9;
-node0 -> node8;
-node0 -> node6;
-node0 -> node4;
+node1 [label="IF"];
+node3 [label="PRINTLN"];
+node4 [label="Hola mundo"];
+node2 [label="false"];
 node0 -> node1;
+node1 -> node3;
+node3 -> node4;
 node1 -> node2;
 }
